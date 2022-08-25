@@ -4,7 +4,7 @@ from math import pi, sqrt, log as ln
 
 import torch
 
-from denoising_diffusion_pytorch.denoising_diffusion_pytorch import GaussianDiffusion, extract, \
+from denoising_diffusion_pytorch.diffusion_models.denoising_diffusion_pytorch import GaussianDiffusion, extract, \
     unnormalise_to_zero_to_one
 
 # constants

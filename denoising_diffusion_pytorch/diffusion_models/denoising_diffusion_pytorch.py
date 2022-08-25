@@ -9,7 +9,7 @@ from einops import rearrange, reduce
 from torch import nn, einsum
 from tqdm.auto import tqdm
 
-from utils import exists
+from denoising_diffusion_pytorch.utils import exists
 
 # constants
 
