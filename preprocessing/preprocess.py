@@ -5,8 +5,9 @@ from preprocessing.eeg_to_dataset_pipeline import load_eeg, compute_ICA, apply_f
 import os
 from PIL import Image
 
+
 def preprocess(output_dir='./outputs'):
-    sub_sess_pairs = [# subject, session
+    sub_sess_pairs = [  # subject, session
         (10, 1),
         (10, 2),
         (13, 1),
@@ -34,7 +35,7 @@ def preprocess(output_dir='./outputs'):
         ica = remove_EOG(raw, ica)
         # ica = remove_ECG(raw, ica) # Someties works, sometimes does not, seems to be an issue with MNE
         raw = apply_ICA_to_RAW(raw, ica)
-        del ica # It is no longer needed, so we delete it from memory
+        del ica  # It is no longer needed, so we delete it from memory
 
         events, event_ids, epochs, events_list = generate_events(raw)
 
@@ -78,6 +79,3 @@ def preprocess(output_dir='./outputs'):
         # pbar_epochs.close()
 
         print(f'Completed preprocessing for subject {subject}, session {session}')
-
-
-
