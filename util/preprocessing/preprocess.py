@@ -79,3 +79,6 @@ def preprocess(output_dir='./outputs'):
         print(f'Completed preprocessing for subject {subject}, session {session}')
 
         del raw, ica, select_epochs, cropped_epochs
+
+
+preprocess()

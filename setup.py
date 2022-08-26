@@ -6,9 +6,7 @@ setup(
     version='0.27.4',
     license='MIT',
     description='Denoising Diffusion Probabilistic Models - Pytorch',
-    author='Phil Wang',
-    author_email='lucidrains@gmail.com',
-    url='https://github.com/lucidrains/denoising-diffusion-pytorch',
+    author='DevJake',
     long_description_content_type='text/markdown',
     keywords=[
         'artificial intelligence',
