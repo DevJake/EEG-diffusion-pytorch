@@ -38,7 +38,7 @@ def preprocess(output_dir='./outputs'):
         raw = eeg_to_dataset_pipeline.apply_ICA_to_RAW(raw, ica)
         del ica  # It is no longer needed, so we delete it from memory
 
-        events, event_ids, epochs, events_list = preprocessing.eeg_to_dataset_pipeline.generate_events(raw)
+        _, _, epochs, _ = eeg_to_dataset_pipeline.generate_events(raw)
 
         A, B, C = ['imagined', 'perceived'], ['guitar', 'penguin', 'flower'], ['text', 'sound', 'pictorial']
         select_epochs = preprocessing.eeg_to_dataset_pipeline.select_specific_epochs(epochs, A, B, C)
@@ -74,3 +74,5 @@ def preprocess(output_dir='./outputs'):
 
         pbar_subjects.update(1)
         print(f'Completed preprocessing for subject {subject}, session {session}')
+
+        del raw, ica, select_epochs, cropped_epochs
