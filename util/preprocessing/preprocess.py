@@ -5,7 +5,7 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
-from . import pipeline
+from util.preprocessing import pipeline
 
 
 def preprocess(output_dir='./outputs'):
