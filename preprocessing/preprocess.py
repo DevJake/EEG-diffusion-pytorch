@@ -22,6 +22,8 @@ def preprocess(output_dir='./outputs'):
         (14, 2)
     ]
 
+    pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
+
     for subject, session in sub_sess_pairs:
 
         raw = preprocessing.eeg_to_dataset_pipeline.load_eeg(subject, session)
@@ -43,9 +45,6 @@ def preprocess(output_dir='./outputs'):
 
         print('All preprocessing now complete, saving images!')
 
-        from tqdm import tqdm
-        from PIL import Image
-        import os
 
         pbar_epochs = tqdm(len(cropped_epochs), position=0, desc='Epoch progress', leave=True)
 
@@ -72,4 +71,5 @@ def preprocess(output_dir='./outputs'):
 
         # pbar_epochs.close()
 
+        pbar_subjects.update(1)
         print(f'Completed preprocessing for subject {subject}, session {session}')
