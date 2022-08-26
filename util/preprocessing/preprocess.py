@@ -9,6 +9,20 @@ from util.preprocessing import pipeline
 
 
 def preprocess(output_dir='./outputs'):
+    # TODO Use glob.iglob to find files with .set extension and matching .fdt file
+    # TODO assert montage file exists
+    # TODO put parameters into a 'metadata' dictionary and save it as a json file to the appropriate directory
+    # TODO Process a dictionary of metadata/hyperparameter variations
+
+    hyperparameters = {
+        'PER_CHANNEL': True,
+        'PREPROCESSING.MONTAGE': True,
+        'PREPROCESSING.REMOVE_DC': True,
+        'PREPROCESSING.LOW_PASS_FILTER': True,
+        'PREPROCESSING.HIGH_PASS_FILTER': True,
+        'PREPROCESSING.USE_ICA': True
+    }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
+
     sub_sess_pairs = [  # subject, session
         (10, 1),
         (10, 2),
@@ -37,6 +51,7 @@ def preprocess(output_dir='./outputs'):
         raw = pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
         ica = pipeline.compute_ICA(raw)
         ica = pipeline.remove_EOG(raw, ica)
+        # TODO assert that the use_ica hyperparameter is True
         # ica = pipeline.remove_ECG(raw, ica) # Sometimes works, sometimes does not, seems to be an issue with MNE
         raw = pipeline.apply_ICA_to_RAW(raw, ica)
         del ica  # It is no longer needed, so we delete it from memory
