@@ -5,7 +5,7 @@ from preprocessing.eeg_to_dataset_pipeline import load_eeg, compute_ICA, apply_f
 import os
 from PIL import Image
 
-def preprocess(output_dir='./outputs/'):
+def preprocess(output_dir='./outputs'):
     sub_sess_pairs = [# subject, session
         (10, 1),
         (10, 2),
@@ -60,7 +60,7 @@ def preprocess(output_dir='./outputs/'):
             pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress', leave=True)
 
             for c, channel in enumerate(images):
-                dir = f'./output/subject_{subject}/session_{session}/channel_{c}'
+                dir = f'{output_dir}/subject_{subject}/session_{session}/channel_{c}'
                 os.makedirs(dir, exist_ok=True)
                 pbar_event = tqdm(channel.shape[0], position=2, desc='Event progress', leave=True)
                 for e, event in enumerate(channel):
