@@ -1,8 +1,9 @@
-import preprocessing.eeg_to_dataset_pipeline
+from . import eeg_to_dataset_pipeline
 
 from tqdm import tqdm
 from PIL import Image
 import os
+
 
 def preprocess(output_dir='./outputs'):
     sub_sess_pairs = [  # subject, session
@@ -26,15 +27,15 @@ def preprocess(output_dir='./outputs'):
 
     for subject, session in sub_sess_pairs:
 
-        raw = preprocessing.eeg_to_dataset_pipeline.load_eeg(subject, session)
+        raw = eeg_to_dataset_pipeline.load_eeg(subject, session)
 
-        raw = preprocessing.eeg_to_dataset_pipeline.apply_montage(raw, './data/ANTNeuro_montage.json')
-        raw = preprocessing.eeg_to_dataset_pipeline.remove_DC(raw)
-        raw = preprocessing.eeg_to_dataset_pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
-        ica = preprocessing.eeg_to_dataset_pipeline.compute_ICA(raw)
-        ica = preprocessing.eeg_to_dataset_pipeline.remove_EOG(raw, ica)
+        raw = eeg_to_dataset_pipeline.apply_montage(raw, './data/ANTNeuro_montage.json')
+        raw = eeg_to_dataset_pipeline.remove_DC(raw)
+        raw = eeg_to_dataset_pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
+        ica = eeg_to_dataset_pipeline.compute_ICA(raw)
+        ica = eeg_to_dataset_pipeline.remove_EOG(raw, ica)
         # ica = remove_ECG(raw, ica) # Someties works, sometimes does not, seems to be an issue with MNE
-        raw = preprocessing.eeg_to_dataset_pipeline.apply_ICA_to_RAW(raw, ica)
+        raw = eeg_to_dataset_pipeline.apply_ICA_to_RAW(raw, ica)
         del ica  # It is no longer needed, so we delete it from memory
 
         events, event_ids, epochs, events_list = preprocessing.eeg_to_dataset_pipeline.generate_events(raw)
