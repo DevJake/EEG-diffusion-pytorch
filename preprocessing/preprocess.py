@@ -41,8 +41,8 @@ def preprocess(output_dir='./outputs'):
         _, _, epochs, _ = eeg_to_dataset_pipeline.generate_events(raw)
 
         A, B, C = ['imagined', 'perceived'], ['guitar', 'penguin', 'flower'], ['text', 'sound', 'pictorial']
-        select_epochs = preprocessing.eeg_to_dataset_pipeline.select_specific_epochs(epochs, A, B, C)
-        cropped_epochs = preprocessing.eeg_to_dataset_pipeline.crop_epochs(select_epochs)
+        select_epochs = eeg_to_dataset_pipeline.select_specific_epochs(epochs, A, B, C)
+        cropped_epochs = eeg_to_dataset_pipeline.crop_epochs(select_epochs)
 
         print('All preprocessing now complete, saving images!')
 
@@ -51,7 +51,8 @@ def preprocess(output_dir='./outputs'):
 
         for i, p in enumerate(zip(cropped_epochs, cropped_epochs.event_id)):
             epoch, name = p
-            images = preprocessing.eeg_to_dataset_pipeline.generate_eeg_dataset(epoch.squeeze())  # Remove outer dimension as this is just 1, so useless
+            images = eeg_to_dataset_pipeline.generate_eeg_dataset(
+                epoch.squeeze())  # Remove outer dimension as this is just 1, so useless
             pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress', leave=True)
 
             for c, channel in enumerate(images):
@@ -60,7 +61,7 @@ def preprocess(output_dir='./outputs'):
                 pbar_event = tqdm(channel.shape[0], position=2, desc='Event progress', leave=True)
                 for e, event in enumerate(channel):
                     im = Image.fromarray(event, 'L')
-                    im.save(f'{dir}/epoch_{i}_channel_{c}_event_{k}_{name}.jpg')
+                    im.save(f'{dir}/epoch_{i}_channel_{c}_event_{e}_{name}.jpg')
 
                     pbar_event.update(1)
 
