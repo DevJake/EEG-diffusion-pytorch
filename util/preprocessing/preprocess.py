@@ -37,7 +37,7 @@ def preprocess(output_dir='./outputs'):
         raw = pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
         ica = pipeline.compute_ICA(raw)
         ica = pipeline.remove_EOG(raw, ica)
-        # ica = pipeline.remove_ECG(raw, ica) # Someties works, sometimes does not, seems to be an issue with MNE
+        # ica = pipeline.remove_ECG(raw, ica) # Sometimes works, sometimes does not, seems to be an issue with MNE
         raw = pipeline.apply_ICA_to_RAW(raw, ica)
         del ica  # It is no longer needed, so we delete it from memory
 
@@ -49,25 +49,25 @@ def preprocess(output_dir='./outputs'):
 
         print('All preprocessing now complete, saving images!')
 
-        pbar_epochs = tqdm(len(cropped_epochs), position=0, desc='Epoch progress', leave=True)
+        pbar_epochs = tqdm(len(cropped_epochs), position=0, desc='Epoch progress')
 
         for i, p in enumerate(zip(cropped_epochs, cropped_epochs.event_id)):
             epoch, name = p
             images = pipeline.generate_eeg_dataset(
                 epoch.squeeze())  # Remove outer dimension as this is just 1, so useless
-            pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress', leave=True)
+            # pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress')
 
             for c, channel in enumerate(images):
                 dir = f'{output_dir}/subject_{subject}/session_{session}/channel_{c}'
                 os.makedirs(dir, exist_ok=True)
-                pbar_event = tqdm(channel.shape[0], position=2, desc='Event progress', leave=True)
+                # pbar_event = tqdm(channel.shape[0], position=2, desc='Event progress')
                 for e, event in enumerate(channel):
                     im = Image.fromarray(event, 'L')
                     im.save(f'{dir}/epoch_{i}_channel_{c}_event_{e}_{name}.jpg')
 
-                    pbar_event.update(1)
+                    # pbar_event.update(1)
 
-                pbar_channels.update(1)
+                # pbar_channels.update(1)
                 # pbar_event.close()
 
             pbar_epochs.update(1)
@@ -78,7 +78,7 @@ def preprocess(output_dir='./outputs'):
         pbar_subjects.update(1)
         print(f'Completed preprocessing for subject {subject}, session {session}')
 
-        del raw, ica, select_epochs, cropped_epochs
+        del raw, select_epochs, cropped_epochs
 
 
 preprocess()
