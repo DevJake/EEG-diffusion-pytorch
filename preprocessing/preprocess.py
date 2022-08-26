@@ -1,5 +1,4 @@
-from preprocessing.eeg_to_dataset_pipeline import load_eeg, compute_ICA, apply_filter, remove_DC, apply_montage, \
-    remove_EOG, apply_ICA_to_RAW, generate_events, select_specific_epochs, crop_epochs, generate_eeg_dataset
+import preprocessing.eeg_to_dataset_pipeline
 
 
 def preprocess(output_dir='./outputs'):
@@ -22,22 +21,22 @@ def preprocess(output_dir='./outputs'):
 
     for subject, session in sub_sess_pairs:
 
-        raw = load_eeg(subject, session)
+        raw = preprocessing.eeg_to_dataset_pipeline.load_eeg(subject, session)
 
-        raw = apply_montage(raw, './data/ANTNeuro_montage.json')
-        raw = remove_DC(raw)
-        raw = apply_filter(raw, low_freq=0.1, high_freq=50)
-        ica = compute_ICA(raw)
-        ica = remove_EOG(raw, ica)
+        raw = preprocessing.eeg_to_dataset_pipeline.apply_montage(raw, './data/ANTNeuro_montage.json')
+        raw = preprocessing.eeg_to_dataset_pipeline.remove_DC(raw)
+        raw = preprocessing.eeg_to_dataset_pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
+        ica = preprocessing.eeg_to_dataset_pipeline.compute_ICA(raw)
+        ica = preprocessing.eeg_to_dataset_pipeline.remove_EOG(raw, ica)
         # ica = remove_ECG(raw, ica) # Someties works, sometimes does not, seems to be an issue with MNE
-        raw = apply_ICA_to_RAW(raw, ica)
+        raw = preprocessing.eeg_to_dataset_pipeline.apply_ICA_to_RAW(raw, ica)
         del ica  # It is no longer needed, so we delete it from memory
 
-        events, event_ids, epochs, events_list = generate_events(raw)
+        events, event_ids, epochs, events_list = preprocessing.eeg_to_dataset_pipeline.generate_events(raw)
 
         A, B, C = ['imagined', 'perceived'], ['guitar', 'penguin', 'flower'], ['text', 'sound', 'pictorial']
-        select_epochs = select_specific_epochs(epochs, A, B, C)
-        cropped_epochs = crop_epochs(select_epochs)
+        select_epochs = preprocessing.eeg_to_dataset_pipeline.select_specific_epochs(epochs, A, B, C)
+        cropped_epochs = preprocessing.eeg_to_dataset_pipeline.crop_epochs(select_epochs)
 
         print('All preprocessing now complete, saving images!')
 
@@ -49,7 +48,7 @@ def preprocess(output_dir='./outputs'):
 
         for i, p in enumerate(zip(cropped_epochs, cropped_epochs.event_id)):
             epoch, name = p
-            images = generate_eeg_dataset(epoch.squeeze())  # Remove outer dimension as this is just 1, so useless
+            images = preprocessing.eeg_to_dataset_pipeline.generate_eeg_dataset(epoch.squeeze())  # Remove outer dimension as this is just 1, so useless
             pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress', leave=True)
 
             for c, channel in enumerate(images):
