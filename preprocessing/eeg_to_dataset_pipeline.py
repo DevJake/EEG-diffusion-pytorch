@@ -32,98 +32,102 @@ Each output window should not only be a .jpg image, but should also be either gr
 
 # Load the given EEG file
 
-import mne
-
-sub_cap_sizes = { # [subject] = capsize
+sub_cap_sizes = {  # [subject] = capsize
     2: 'N/A',
-    3: 'L', 
-    4: 'L', 
-    5: 'M', 
-    6: 'L', 
-    7: 'L', 
-    8: 'M', 
-    9: 'N/A', 
-    10: 'M', 
+    3: 'L',
+    4: 'L',
+    5: 'M',
+    6: 'L',
+    7: 'L',
+    8: 'M',
+    9: 'N/A',
+    10: 'M',
     11: 'M',
-    12: 'L', 
+    12: 'L',
     13: 'L',
-    14: 'L', 
-    15: 'N/A', 
-    16: 'L', 
+    14: 'L',
+    15: 'N/A',
+    16: 'L',
     17: 'L'
 }
 
+
 # subject, session = 10, 1
 
-def load_eeg(subject:int, session:int):
-  raw_file = f'./data/subjects/Subject {subject}/Session {session}/sub{subject}_sess{session}.set'
-  eog_channels =  ['VEOGL', 'VEOGU', 'HEOGR', 'HEOGL'] # electroculogram electrodes 
-  raw = mne.io.read_raw_eeglab(raw_file, preload=True, eog=eog_channels)
+def load_eeg(subject: int, session: int):
+    raw_file = f'./data/subjects/Subject {subject}/Session {session}/sub{subject}_sess{session}.set'
+    eog_channels = ['VEOGL', 'VEOGU', 'HEOGR', 'HEOGL']  # electroculogram electrodes
+    raw = mne.io.read_raw_eeglab(raw_file, preload=True, eog=eog_channels)
 
-  raw.info['bads'] += 'CCP1h' if sub_cap_sizes[subject] == 'L' else []
+    raw.info['bads'] += 'CCP1h' if sub_cap_sizes[subject] == 'L' else []
 
-  raw = raw.pick_types(eog=False, eeg=True, exclude='bads') # Effectively drop all EOG channels, leaving just EEG
-  raw = raw.interpolate_bads(reset_bads=False)
+    raw = raw.pick_types(eog=False, eeg=True, exclude='bads')  # Effectively drop all EOG channels, leaving just EEG
+    raw = raw.interpolate_bads(reset_bads=False)
 
-  return raw
+    return raw
 
 
 from matplotlib import pyplot as plt
 
+
 def generate_sample_image_from_eeg(start_t, end_t, image_height=64, channel=0):
-  SAMPLE_RATE = 1024
-  plt.gray()
-  return plt.imshow(raw.get_data(channel, start_t*SAMPLE_RATE, end_t*SAMPLE_RATE)[0, :].reshape(image_height, -1), interpolation='nearest')
+    SAMPLE_RATE = 1024
+    plt.gray()
+    return plt.imshow(raw.get_data(channel, start_t * SAMPLE_RATE, end_t * SAMPLE_RATE)[0, :].reshape(image_height, -1),
+                      interpolation='nearest')
+
 
 # display(generate_sample_image_from_eeg(500, 510))
 
 import mne
 import json
 import numpy as np
-from mne.preprocessing import create_ecg_epochs, create_eog_epochs
-import numpy as np
-from numpy.lib.stride_tricks import as_strided
 import mne.preprocessing as preprocessing
 
 
-def apply_montage(raw, montage_file_path:str):
-  with open(montage_file_path, 'r') as f:
-    raw.set_montage(mne.channels.make_dig_montage(json.load(f), coord_frame='head'))
-  return raw
-
-def compute_ICA(raw, channels:int=20, random_state:int=0, reject_dict={'mag': 5e-12, 'grad': 4000e-13}, max_iter=800, method:str='fastica'):
-  ica = mne.preprocessing.ICA(n_components=channels, random_state=random_state, max_iter=max_iter, method=method)
-  return ica.fit(raw, reject = reject_dict)
-
-def remove_EOG(raw, ica, eog_channel_names=['Fp1', 'Fp2'], ica_z_threshold=1.96): # Requires ICA
-  eog_epochs = preprocessing.create_eog_epochs(raw, ch_name = ['Fp1', 'Fp2']).average()
-  eog_epochs.apply_baseline(baseline=(None, -0.2))
-
-  eog_indices, _ = ica.find_bads_eog(eog_epochs, ch_name=eog_channel_names, threshold=ica_z_threshold)
-  ica.exclude.extend(eog_indices)
-
-  return ica
+def apply_montage(raw, montage_file_path: str):
+    with open(montage_file_path, 'r') as f:
+        raw.set_montage(mne.channels.make_dig_montage(json.load(f), coord_frame='head'))
+    return raw
 
 
-def remove_ECG(raw, ica, ica_z_threshold=1.96): # Requires ICA
-  ecg_epochs = preprocessing.create_ecg_epochs(raw).average()
-  ecg_epochs.apply_baseline(baseline=(None, -0.2))
+def compute_ICA(raw, channels: int = 20, random_state: int = 0, reject_dict={'mag': 5e-12, 'grad': 4000e-13},
+                max_iter=800, method: str = 'fastica'):
+    ica = mne.preprocessing.ICA(n_components=channels, random_state=random_state, max_iter=max_iter, method=method)
+    return ica.fit(raw, reject=reject_dict)
 
-  ecg_indices, _ = ica.find_bads_ecg(ecg_epochs, threshold=ica_z_threshold)
-  ica.exclude.extend(ecg_indices)
 
-  return ica
+def remove_EOG(raw, ica, eog_channel_names=['Fp1', 'Fp2'], ica_z_threshold=1.96):  # Requires ICA
+    eog_epochs = preprocessing.create_eog_epochs(raw, ch_name=['Fp1', 'Fp2']).average()
+    eog_epochs.apply_baseline(baseline=(None, -0.2))
+
+    eog_indices, _ = ica.find_bads_eog(eog_epochs, ch_name=eog_channel_names, threshold=ica_z_threshold)
+    ica.exclude.extend(eog_indices)
+
+    return ica
+
+
+def remove_ECG(raw, ica, ica_z_threshold=1.96):  # Requires ICA
+    ecg_epochs = preprocessing.create_ecg_epochs(raw).average()
+    ecg_epochs.apply_baseline(baseline=(None, -0.2))
+
+    ecg_indices, _ = ica.find_bads_ecg(ecg_epochs, threshold=ica_z_threshold)
+    ica.exclude.extend(ecg_indices)
+
+    return ica
+
 
 def remove_DC(raw, notches=np.arange(50, 251, 50)):
-  # https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.notch_filter
-  return raw.notch_filter(notches, picks = 'eeg', filter_length = 'auto', phase = 'zero-double', fir_design = 'firwin')
+    # https://mne.tools/stable/generated/mne.io.Raw.html#mne.io.Raw.notch_filter
+    return raw.notch_filter(notches, picks='eeg', filter_length='auto', phase='zero-double', fir_design='firwin')
 
 
 def apply_filter(raw, low_freq=None, high_freq=None):
-  return raw.filter(low_freq, high_freq)
+    return raw.filter(low_freq, high_freq)
+
 
 def apply_ICA_to_RAW(raw, ica, dimensions_to_keep=124):
-  return ica.apply(raw, n_pca_components=dimensions_to_keep)
+    return ica.apply(raw, n_pca_components=dimensions_to_keep)
 
 
 # raw.plot_psd(fmin = 0,fmax=50, n_fft=2048, spatial_colors=True)
@@ -132,140 +136,143 @@ def apply_ICA_to_RAW(raw, ica, dimensions_to_keep=124):
 # raw.get_montage().plot(kind='topomap', show_names=True, sphere='auto')
 
 def generate_events(raw):
-  events, event_ids = mne.events_from_annotations(raw, verbose = False)
-  epochs = mne.Epochs(raw=raw, events=events, event_id=event_ids, preload=True, tmin = 0,tmax =4,baseline=None, event_repeated='merge')
+    events, event_ids = mne.events_from_annotations(raw, verbose=False)
+    epochs = mne.Epochs(raw=raw, events=events, event_id=event_ids, preload=True, tmin=0, tmax=4, baseline=None,
+                        event_repeated='merge')
+
+    events_list = {(a, b, c): [] for a in ['imagined', 'perceived'] for b in ['flower', 'guitar', 'penguin'] for c in
+                   ['text', 'pictorial', 'sound']}
+
+    for id in event_ids:
+        idl = id.lower()
+        a = 'imagined' if 'imagination' in idl else 'perceived'
+        b = 'guitar' if 'guitar' in idl else 'flower' if 'flower' in idl else 'penguin'
+        c = 'text' if '_t_' in idl else 'pictorial' if '_image_' in idl else 'sound'
+        events_list[(a, b, c)].append(id)
+
+    for i, event in enumerate(events_list.items()):
+        key, value = event
+        name = '_'.join(key)
+        mne.epochs.combine_event_ids(epochs, value, {name: 500 + i}, copy=False)
+
+    return events, event_ids, epochs, events_list
 
 
-  events_list = {(a, b, c):[] for a in ['imagined', 'perceived'] for b in ['flower', 'guitar', 'penguin'] for c in ['text', 'pictorial', 'sound']}
-  
-  for id in event_ids:
-    idl = id.lower()
-    a = 'imagined' if 'imagination' in idl else 'perceived'
-    b = 'guitar' if 'guitar' in idl else 'flower' if 'flower' in idl else 'penguin'
-    c = 'text' if '_t_' in idl else 'pictorial' if '_image_' in idl else 'sound'
-    events_list[(a, b, c)].append(id)
-
-  for i, event in enumerate(events_list.items()):
-    key, value = event
-    name = '_'.join(key)
-    mne.epochs.combine_event_ids(epochs, value, {name: 500+i}, copy = False)
-
-  return events, event_ids, epochs, events_list
-
-def select_specific_epochs(epochs, A:list, B:list, C:list):
-  select_epochs = [[a,b,c] for a in A for b in B for c in C]
-  select_epochs = ['_'.join(k) for k in select_epochs]
-  select_epochs = epochs[select_epochs]
-  return select_epochs
+def select_specific_epochs(epochs, A: list, B: list, C: list):
+    select_epochs = [[a, b, c] for a in A for b in B for c in C]
+    select_epochs = ['_'.join(k) for k in select_epochs]
+    select_epochs = epochs[select_epochs]
+    return select_epochs
 
 
 def crop_epochs(epochs, cropping_rules=None):
-  if cropping_rules == None:
-    cropping_rules = {
-        'imagined': {
-            'sound': 4,
-            'pictorial': 4,
-            'text': 4
-        }, 
-        'perceived': {
-            'sound': 4,
-            'pictorial': 3,
-            'text': 3
+    if cropping_rules == None:
+        cropping_rules = {
+            'imagined': {
+                'sound': 4,
+                'pictorial': 4,
+                'text': 4
+            },
+            'perceived': {
+                'sound': 4,
+                'pictorial': 3,
+                'text': 3
+            }
         }
-    }
+
+    for i, epoch in enumerate(zip(epochs, list(epochs.event_id.keys()))):
+        epoch, name = epoch
+        a, _, c = name.split('_')
+
+        epochs[name].crop(tmin=0, tmax=cropping_rules[a][c])
+
+    return epochs
 
 
-  for i, epoch in enumerate(zip(epochs, list(epochs.event_id.keys()))):
-    epoch, name = epoch
-    a, _, c = name.split('_')
-    
-    epochs[name].crop(tmin=0, tmax=cropping_rules[a][c])
+def get_output_dims_by_factors(vector_length: int, orientation='landscape'):
+    orientation = orientation.lower()
 
-  return epochs
+    pairs = np.array(
+        [[p, vector_length // p] for p in range(2, int(np.sqrt(vector_length) + 1)) if vector_length % p == 0])
 
+    assert pairs.size > 0, f'No factor pairs exist for the given value: {vector_length}'
+    assert orientation in ['landscape', 'portrait'], 'The orientation must be one of either landscape or portrait. '
 
-
-def get_output_dims_by_factors(vector_length:int, orientation='landscape'):
-  orientation = orientation.lower()
-  
-  pairs = np.array([[p, vector_length//p] for p in range(2, int(np.sqrt(vector_length)+1)) if vector_length%p == 0])
-
-  assert pairs.size > 0, f'No factor pairs exist for the given value: {vector_length}'
-  assert orientation in ['landscape', 'portrait'], 'The orientation must be one of either landscape or portrait. '
-
-  squarest = np.sort(pairs[np.argmin(np.abs(pairs[:, 0] - pairs[:, 1]))])
-  return squarest if orientation=='portrait' else squarest[::-1]
-
-def calc_total_windows(vector_length:int, window_width:int, overlap:int = 1, sample_rate = 1024):
-  return 1 + int((vector_length - (window_width * sample_rate)) / (overlap * sample_rate))
+    squarest = np.sort(pairs[np.argmin(np.abs(pairs[:, 0] - pairs[:, 1]))])
+    return squarest if orientation == 'portrait' else squarest[::-1]
 
 
-def split_vector_to_window_indices(vector_length:int, window_width=1, window_overlap=0.5, sample_rate=1024): # return (a, b) pairs from which to split the vector against
-  window_width *= sample_rate
-  window_overlap *= sample_rate
-  # The window_width and window_overlap are products of the sample_rate, 
-  # so if 1 second is 1024Hz, then a 0.9 window_overlap is 0.9*sample_rate
+def calc_total_windows(vector_length: int, window_width: int, overlap: int = 1, sample_rate=1024):
+    return 1 + int((vector_length - (window_width * sample_rate)) / (overlap * sample_rate))
 
-  
-  assert window_width % 1 == 0, f'The given window width does not produce an integer sample count. window_width={window_width/sample_rate}, sample_rate={sample_rate}'
-  assert window_overlap % 1 == 0, f'The given window overlap does not produce an integer sample count. window_overlap={window_overlap/sample_rate}, sample_rate={sample_rate}'
 
-  window_width, window_overlap = int(window_width), int(window_overlap)
+def split_vector_to_window_indices(vector_length: int, window_width=1, window_overlap=0.5,
+                                   sample_rate=1024):  # return (a, b) pairs from which to split the vector against
+    window_width *= sample_rate
+    window_overlap *= sample_rate
+    # The window_width and window_overlap are products of the sample_rate,
+    # so if 1 second is 1024Hz, then a 0.9 window_overlap is 0.9*sample_rate
 
-  assert window_width != window_overlap, 'The window width cannot equal the overlap, as this produces no windows!'
-  assert window_width > 0, 'Window width must be greater than zero.'
-  assert window_overlap >= 0, 'Window overlap cannot be negative.'
+    assert window_width % 1 == 0, f'The given window width does not produce an integer sample count. window_width={window_width / sample_rate}, sample_rate={sample_rate}'
+    assert window_overlap % 1 == 0, f'The given window overlap does not produce an integer sample count. window_overlap={window_overlap / sample_rate}, sample_rate={sample_rate}'
 
-  if window_overlap == 0:
-    k = np.arange(start=0, stop=vector_length+(sample_rate if vector_length%sample_rate == 0 else 0))
-    return np.array(list(zip(k[::sample_rate], k[sample_rate::sample_rate])))
+    window_width, window_overlap = int(window_width), int(window_overlap)
 
-  k = np.arange(start=0, stop=vector_length-window_overlap, step=window_width-window_overlap)
-  k = k[k <= vector_length-window_width]
-  return np.array([k, k+window_width]).T
+    assert window_width != window_overlap, 'The window width cannot equal the overlap, as this produces no windows!'
+    assert window_width > 0, 'Window width must be greater than zero.'
+    assert window_overlap >= 0, 'Window overlap cannot be negative.'
 
-def generate_eeg_dataset(raw_eeg, channels:list=np.arange(128), per_channel=True, window_width_seconds=1, window_overlap_seconds=0.5):
-  assert type(raw_eeg) in [np.ndarray, mne.io.eeglab.eeglab.RawEEGLAB], \
-  f'The given raw_eeg must be of type Numpy Array or RawEEGLAB. type={type(raw_eeg)}'
+    if window_overlap == 0:
+        k = np.arange(start=0, stop=vector_length + (sample_rate if vector_length % sample_rate == 0 else 0))
+        return np.array(list(zip(k[::sample_rate], k[sample_rate::sample_rate])))
 
-  if type(raw_eeg) is mne.io.eeglab.eeglab.RawEEGLAB and len(channels) > len(raw_eeg.ch_names):
-    channels = np.arange(len(raw_eeg.ch_names))
-  else:
-    channels = np.arange(raw_eeg.shape[0])
-  
-  window_size = window_width_seconds * 1024 # 1024Hz
-  
+    k = np.arange(start=0, stop=vector_length - window_overlap, step=window_width - window_overlap)
+    k = k[k <= vector_length - window_width]
+    return np.array([k, k + window_width]).T
 
-  output_size = get_output_dims_by_factors(window_size) if per_channel else get_output_dims_by_factors(window_size * len(channels))
-  # Size of output image for each EEG sample, optionally per channel
 
-  data = raw_eeg.squeeze()
-  if type(raw_eeg) is mne.io.eeglab.eeglab.RawEEGLAB:
-    data = raw_eeg.get_data(channels, start=0, stop=None) # loads all of the data. # (n_channels, n_data_points)
-  
-  splits = split_vector_to_window_indices(data.shape[1])
+def generate_eeg_dataset(raw_eeg, channels: list = np.arange(128), per_channel=True, window_width_seconds=1,
+                         window_overlap_seconds=0.5):
+    assert type(raw_eeg) in [np.ndarray, mne.io.eeglab.eeglab.RawEEGLAB], \
+        f'The given raw_eeg must be of type Numpy Array or RawEEGLAB. type={type(raw_eeg)}'
 
-  split_start, split_end = splits[:, 0], splits[:, 1]
-
-  output = None
-  if per_channel:
-    output = np.zeros((channels.shape[0], splits.shape[0], output_size[0], output_size[1])) # n_channels, n_windows, reshaped_window
-  else:
-    output = np.zeros((splits.shape[0], output_size[0], output_size[1]))
-
-  if per_channel:
-    temp = np.zeros((channels.shape[0], splits.shape[0]))
-
-  for i, s in enumerate(zip(split_start, split_end)):
-    a, b = s
-    
-    if per_channel:
-      for c in channels:
-        output[c,i] = data[c, a:b].reshape(-1, output_size[0], output_size[1])
+    if type(raw_eeg) is mne.io.eeglab.eeglab.RawEEGLAB and len(channels) > len(raw_eeg.ch_names):
+        channels = np.arange(len(raw_eeg.ch_names))
     else:
-      output[i] = data[:, a:b].reshape(output_size[0], output_size[1])
-    
-  del data
-  return output
+        channels = np.arange(raw_eeg.shape[0])
 
+    window_size = window_width_seconds * 1024  # 1024Hz
 
+    output_size = get_output_dims_by_factors(window_size) if per_channel else get_output_dims_by_factors(
+        window_size * len(channels))
+    # Size of output image for each EEG sample, optionally per channel
+
+    data = raw_eeg.squeeze()
+    if type(raw_eeg) is mne.io.eeglab.eeglab.RawEEGLAB:
+        data = raw_eeg.get_data(channels, start=0, stop=None)  # loads all of the data. # (n_channels, n_data_points)
+
+    splits = split_vector_to_window_indices(data.shape[1])
+
+    split_start, split_end = splits[:, 0], splits[:, 1]
+
+    output = None
+    if per_channel:
+        output = np.zeros((channels.shape[0], splits.shape[0], output_size[0],
+                           output_size[1]))  # n_channels, n_windows, reshaped_window
+    else:
+        output = np.zeros((splits.shape[0], output_size[0], output_size[1]))
+
+    if per_channel:
+        temp = np.zeros((channels.shape[0], splits.shape[0]))
+
+    for i, s in enumerate(zip(split_start, split_end)):
+        a, b = s
+
+        if per_channel:
+            for c in channels:
+                output[c, i] = data[c, a:b].reshape(-1, output_size[0], output_size[1])
+        else:
+            output[i] = data[:, a:b].reshape(output_size[0], output_size[1])
+
+    del data
+    return output

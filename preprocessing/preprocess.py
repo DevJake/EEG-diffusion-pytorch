@@ -1,9 +1,5 @@
-from tqdm import tqdm
-
 from preprocessing.eeg_to_dataset_pipeline import load_eeg, compute_ICA, apply_filter, remove_DC, apply_montage, \
-    remove_EOG, remove_ECG, apply_ICA_to_RAW, generate_events, select_specific_epochs, crop_epochs, generate_eeg_dataset
-import os
-from PIL import Image
+    remove_EOG, apply_ICA_to_RAW, generate_events, select_specific_epochs, crop_epochs, generate_eeg_dataset
 
 
 def preprocess(output_dir='./outputs'):
@@ -44,10 +40,6 @@ def preprocess(output_dir='./outputs'):
         cropped_epochs = crop_epochs(select_epochs)
 
         print('All preprocessing now complete, saving images!')
-
-        from tqdm import tqdm
-        from PIL import Image
-        import os
 
         from tqdm import tqdm
         from PIL import Image
