@@ -65,8 +65,8 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
         _, _, epochs, _ = pipeline.generate_events(raw)
         path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{unique_id}'
-        os.makedirs(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif', exist_ok=True)
-        raw.save()
+        os.makedirs(path, exist_ok=True)
+        raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif')
 
         with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.fif', 'w') as f:
             json.dump(hypers, f, sort_keys=True, indent=4)
@@ -75,9 +75,9 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
         A, B, C = ['imagined', 'perceived'], ['guitar', 'penguin', 'flower'], ['text', 'sound', 'pictorial']
         select_epochs = pipeline.select_specific_epochs(epochs, A, B, C)
-        del select_epochs
 
         cropped_epochs = pipeline.crop_epochs(select_epochs)
+        del select_epochs
 
         print('All preprocessing now complete, saving images!')
 
