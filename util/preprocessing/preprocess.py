@@ -161,7 +161,7 @@ if __name__ == '__main__':
     ALLOW_DEFAULT_CONFIG = False
 
     configs = load_and_process_hyperparameters('./data/configurations')
-    for i, config in configs:
+    for i, config in enumerate(configs):
         if config['META.CONFIG_NAME'] == 'default-config' and not ALLOW_DEFAULT_CONFIG:
             continue
         print(f'Now processing with the following configuration ({i} of {len(configs)}):')
