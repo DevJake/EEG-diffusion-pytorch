@@ -19,8 +19,9 @@ if __name__ == '__main__':
     ]
 
     print(f'Loaded {len(combinations)} total variants...')
+    print(f'Estimated configuration count is {len(combinations) * len(list(glob.iglob(samples_dir + "/**.json")))}')
 
-    for i, sample in enumerate(glob.iglob(f'{samples_dir}/**.json')):
+    for i, sample in enumerate(glob.iglob(f'{samples_dir}/*.json')):
         print('Operating on config #', i)
 
         os.makedirs(f'{samples_dir}/generated/config_{i}', exist_ok=True)
