@@ -148,7 +148,7 @@ def load_and_process_hyperparameters(dir: str):
     for config_path in glob.iglob(f'{dir}/**/*.json'):
         with open(config_path, 'r') as f:
             configs.append(json.load(f))
-            print('Loaded config:', json.load(f))
+            # print('Loaded config:', json.load(f))
 
     print(f'Found {len(configs)} to be processed...')
     return configs

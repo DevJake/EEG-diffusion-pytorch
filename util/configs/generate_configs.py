@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import uuid
 
 if __name__ == '__main__':
     samples_dir = './samples'
@@ -33,11 +34,15 @@ if __name__ == '__main__':
 
             config = conf.copy()
 
-            config['META.CONFIG_NAME'] += f'_window_size={window_size}'
-            config['META.CONFIG_NAME'] += f'_window_overlap={window_overlap}'
-            config['META.CONFIG_NAME'] += f'_use_channels={use_channels}'
-            config['META.CONFIG_NAME'] += f'_highpass={high_pass}'
-            config['META.CONFIG_NAME'] += f'_lowpass={low_pass}'
+            # config['META.CONFIG_NAME'] += f'_window_size={window_size}'
+            # config['META.CONFIG_NAME'] += f'_window_overlap={window_overlap}'
+            # config['META.CONFIG_NAME'] += f'_use_channels={use_channels}'
+            # config['META.CONFIG_NAME'] += f'_highpass={high_pass}'
+            # config['META.CONFIG_NAME'] += f'_lowpass={low_pass}'
+
+            unique_id = str(uuid.uuid4())
+
+            config['META.CONFIG_NAME'] += '--' + unique_id
 
             config['PREPROCESSING.HIGH_PASS_FILTER.FREQ'] = high_pass
             config['PREPROCESSING.LOW_PASS_FILTER.FREQ'] = low_pass

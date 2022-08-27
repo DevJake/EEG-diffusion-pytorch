@@ -1,0 +1,15 @@
+{
+    "META.CONFIG_COMMENT": "A copy of the default config with all settings enabled and default values",
+    "META.CONFIG_NAME": "default-config-copy--58f8ec77-b53c-4fc3-8bbd-57ba98b7a67b",
+    "PREPROCESSING.DO_HIGH_PASS_FILTER": true,
+    "PREPROCESSING.DO_LOW_PASS_FILTER": true,
+    "PREPROCESSING.DO_MONTAGE": true,
+    "PREPROCESSING.DO_REMOVE_DC": true,
+    "PREPROCESSING.DO_REMOVE_EOG": true,
+    "PREPROCESSING.DO_USE_ICA": true,
+    "PREPROCESSING.HIGH_PASS_FILTER.FREQ": 70,
+    "PREPROCESSING.LOW_PASS_FILTER.FREQ": 0.1,
+    "RENDER.DO_PER_CHANNEL": true,
+    "RENDER.WINDOW_OVERLAP": 0.1,
+    "RENDER.WINDOW_WIDTH": 0.5
+}
