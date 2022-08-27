@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import uuid
 
 from PIL import Image
 from tqdm import tqdm
@@ -34,6 +35,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
     pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
 
     for subject, session in sub_sess_pairs:
+        unique_id = str(uuid.uuid5()) # A unique ID for this run
 
         raw = pipeline.load_eeg(subject, session)
 
