@@ -65,7 +65,7 @@ def load_eeg(subject: int, session: int):
     except RuntimeError:
         print('Exception has occurred when ignoring bad channels, selecting without explicit exclusions...')
         raw.info['bads'] = []
-        raw = raw.pick_types(eeg=True, eog=False)
+        raw = raw.pick_types(eeg=True, eog=False, exlude='bads')
     raw = raw.interpolate_bads(reset_bads=False)
 
     return raw
