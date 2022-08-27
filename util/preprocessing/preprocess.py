@@ -8,7 +8,7 @@ from tqdm import tqdm
 from util.preprocessing import pipeline
 
 
-def preprocess(output_dir='./outputs'):
+def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/preprocessing/'):
     # TODO Use glob.iglob to find files with .set extension and matching .fdt file
     # TODO assert montage file exists
     # TODO put parameters into a 'metadata' dictionary and save it as a json file to the appropriate directory
