@@ -21,12 +21,17 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
     if hypers is None:
         # TODO load the default hyperparameters from a configuration file
         hypers = {
-            'PER_CHANNEL': True,
-            'PREPROCESSING.MONTAGE': True,
-            'PREPROCESSING.REMOVE_DC': True,
-            'PREPROCESSING.LOW_PASS_FILTER': True,
-            'PREPROCESSING.HIGH_PASS_FILTER': True,
-            'PREPROCESSING.USE_ICA': True
+            'RENDER.DO_PER_CHANNEL': True,
+            'PREPROCESSING.DO_MONTAGE': True,
+            'PREPROCESSING.DO_REMOVE_DC': True,
+            'PREPROCESSING.DO_LOW_PASS_FILTER': True,
+            'PREPROCESSING.DO_HIGH_PASS_FILTER': True,
+            'PREPROCESSING.DO_USE_ICA': True,
+            'PREPROCESSING.DO_REMOVE_EOG': True,
+            'PREPROCESSING.LOW_PASS_FILTER.FREQ': 0.1,
+            'PREPROCESSING.HIGH_PASS_FILTER.FREQ': 50,
+            'RENDER.WINDOW_WIDTH': 1,
+            'RENDER.WINDOW_OVERLAP': 0.5
         }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
 
     sub_sess_pairs = []  # subject, session
