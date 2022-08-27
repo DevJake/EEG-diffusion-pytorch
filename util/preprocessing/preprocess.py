@@ -16,11 +16,8 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
     assert os.path.exists(f'{eeg_data_dir}/{montage_file_name}.json'), \
         'The specified montage file could not be found! ' \
         'Please check it is in the EEG data directory root.'
-    # TODO Process a dictionary of metadata/hyperparameter variations
-    # TODO Load hyperparameter configurations from a given directory, run each
 
     if hypers is None:
-        # TODO load the default hyperparameters from a configuration file
         hypers = {
             'RENDER.DO_PER_CHANNEL': True,
             'PREPROCESSING.DO_MONTAGE': True,
@@ -59,7 +56,6 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             hypers['META.UUID'] = unique_id
 
             raw = pipeline.load_eeg(subject, session)
-            # TODO account for hyperparameter value changes
             if hypers['PREPROCESSING.DO_MONTAGE']:
                 raw = pipeline.apply_montage(raw, f'{eeg_data_dir}/{montage_file_name}.json')
 
