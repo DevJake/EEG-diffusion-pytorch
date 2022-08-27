@@ -142,16 +142,17 @@ def load_and_process_hyperparameters(dir: str):
     return configs
 
 
-num_cpu = '8'
-os.environ['OMP_NUM_THREADS'] = num_cpu
-preprocess()
-ALLOW_DEFAULT_CONFIG = False
+if __name__ == '__main__':
+    num_cpu = '8'
+    os.environ['OMP_NUM_THREADS'] = num_cpu
+    preprocess()
+    ALLOW_DEFAULT_CONFIG = False
 
-for config in load_and_process_hyperparameters('./data/configurations'):
-    if config['META.CONFIG_NAME'] == 'default-config' and not ALLOW_DEFAULT_CONFIG:
-        continue
-    print('Now processing with the following configuration:')
-    print(config)
-    preprocess(hypers=config)
+    for config in load_and_process_hyperparameters('./data/configurations'):
+        if config['META.CONFIG_NAME'] == 'default-config' and not ALLOW_DEFAULT_CONFIG:
+            continue
+        print('Now processing with the following configuration:')
+        print(config)
+        preprocess(hypers=config)
 
-print('Every config has now been processed, hurray! Terminating...')
+    print('Every config has now been processed, hurray! Terminating...')
