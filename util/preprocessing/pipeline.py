@@ -153,7 +153,11 @@ def generate_events(raw):
     for i, event in enumerate(events_list.items()):
         key, value = event
         name = '_'.join(key)
-        mne.epochs.combine_event_ids(epochs, value, {name: 500 + i}, copy=False)
+        try:
+            mne.epochs.combine_event_ids(epochs, value, {name: 500 + i}, copy=False)
+        except KeyError:
+            print('KeyError whilst combining event IDs... skipping this ID')
+            continue
 
     return events, event_ids, epochs, events_list
 
