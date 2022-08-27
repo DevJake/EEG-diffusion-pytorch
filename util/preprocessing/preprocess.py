@@ -44,11 +44,13 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             sub_sess_pairs.append((subject, session))
 
     pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
-
+    k = 0
     for subject, session in sub_sess_pairs:
-        print(f'Now preprocessing data for Subject {subject}, session {session}')
+        k += 1
+        print(f'Now preprocessing data for Subject {subject}, session {session}. Progress = {k}/{len(sub_sess_pairs)}')
         try:
             unique_id = str(uuid.uuid4())  # A unique ID for this run
+            print('The unique ID for this subject/session pairing is', unique_id)
 
             raw = pipeline.load_eeg(subject, session)
 
