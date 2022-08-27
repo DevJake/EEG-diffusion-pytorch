@@ -59,14 +59,24 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
             raw = pipeline.load_eeg(subject, session)
             # TODO account for hyperparameter value changes
-            raw = pipeline.apply_montage(raw, f'{eeg_data_dir}/{montage_file_name}.json')
-            raw = pipeline.remove_DC(raw)
-            raw = pipeline.apply_filter(raw,
-                                        low_freq=hypers['PREPROCESSING.LOW_PASS_FILTER.FREQ'],
-                                        high_freq=hypers['PREPROCESSING.HIGH_PASS_FILTER.FREQ'])
-            ica = pipeline.compute_ICA(raw)
-            ica = pipeline.remove_EOG(raw, ica)
-            # TODO assert that the use_ica hyperparameter is True
+            if hypers['PREPROCESSING.DO_MONTAGE']:
+                raw = pipeline.apply_montage(raw, f'{eeg_data_dir}/{montage_file_name}.json')
+
+            if hypers['PREPROCESSING.DO_REMOVE_DC']:
+                raw = pipeline.remove_DC(raw)
+
+            if hypers['PREPROCESSING.DO_LOW_PASS_FILTER']:
+                raw = pipeline.apply_filter(raw, low_freq=hypers['PREPROCESSING.LOW_PASS_FILTER.FREQ'], high_freq=None)
+
+            if hypers['PREPROCESSING.DO_HIGH_PASS_FILTER']:
+                raw = pipeline.apply_filter(raw, low_freq=None, high_freq=hypers['PREPROCESSING.HIGH_PASS_FILTER.FREQ'])
+
+            ica = None
+            if hypers['PREPROCESSING.DO_USE_ICA']:
+                ica = pipeline.compute_ICA(raw)
+
+                if hypers['PREPROCESSING.DO_REMOVE_EOG']:
+                    ica = pipeline.remove_EOG(raw, ica)
             # ica = pipeline.remove_ECG(raw, ica) # Sometimes works, sometimes does not, seems to be an issue with MNE
             raw = pipeline.apply_ICA_to_RAW(raw, ica)
             del ica  # It is no longer needed, so we delete it from memory
