@@ -153,6 +153,10 @@ if __name__ == '__main__':
             continue
         print('Now processing with the following configuration:')
         print(config)
-        preprocess(hypers=config)
+        try:
+            preprocess(hypers=config)
+        except Exception as e:
+            print('An exception has been thrown, could not perform preprocessing for the given config...')
+            print(config)
 
     print('Every config has now been processed, hurray! Terminating...')
