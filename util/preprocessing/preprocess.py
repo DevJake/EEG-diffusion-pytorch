@@ -9,7 +9,6 @@ from util.preprocessing import pipeline
 
 
 def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/preprocessing/'):
-    # TODO Use glob.iglob to find files with .set extension and matching .fdt file
     # TODO assert montage file exists
     # TODO put parameters into a 'metadata' dictionary and save it as a json file to the appropriate directory
     # TODO Process a dictionary of metadata/hyperparameter variations
@@ -23,22 +22,14 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         'PREPROCESSING.USE_ICA': True
     }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
 
-    sub_sess_pairs = [  # subject, session
-        (10, 1),
-        (10, 2),
-        (13, 1),
-        (3, 1),
-        (17, 1),
-        (11, 1),
-        (11, 2),
-        (16, 1),
-        (15, 1),
-        (15, 2),
-        (12, 1),
-        (12, 2),
-        (8, 2),
-        (14, 2)
-    ]
+    sub_sess_pairs = []  # subject, session
+
+    for subject in range(20):
+        for session in range(3):
+            path = f'{eeg_data_dir}/Subject {subject}/Session {session}/sub{subject}_sess{session}'
+            if not os.path.isfile(f'{path}.fdt'):
+                continue
+            sub_sess_pairs.append((subject, session))
 
     pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
 
