@@ -32,8 +32,9 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             'PREPROCESSING.HIGH_PASS_FILTER.FREQ': 50,
             'RENDER.WINDOW_WIDTH': 1,
             'RENDER.WINDOW_OVERLAP': 0.5,
-            'META.CONFIG_NAME': 'config-1'
-        }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
+            'META.CONFIG_NAME': 'config-1',
+            'META.CONFIG_COMMENT': 'The default config for any EEG preprocessing.'
+        }
 
     sub_sess_pairs = []  # subject, session
 
