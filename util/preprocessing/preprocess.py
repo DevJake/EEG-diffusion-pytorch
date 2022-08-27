@@ -67,6 +67,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{unique_id}'
         os.makedirs(path, exist_ok=True)
         raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif')
+        # TODO doesn't seem to be saving
 
         with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.fif', 'w') as f:
             json.dump(hypers, f, sort_keys=True, indent=4)

@@ -60,8 +60,11 @@ def load_eeg(subject: int, session: int):
     raw = mne.io.read_raw_eeglab(raw_file, preload=True, eog=eog_channels)
 
     raw.info['bads'] += 'CCP1h' if sub_cap_sizes[subject] == 'L' else []
-
-    raw = raw.pick_types(eog=False, eeg=True, exclude='bads')  # Effectively drop all EOG channels, leaving just EEG
+    try:
+        raw = raw.pick_types(eog=False, eeg=True, exclude='bads')  # Effectively drop all EOG channels, leaving just EEG
+    except RuntimeError:
+        print('Exception has occurred when picking types, ignoring specific selections and defaulting to EEG only...')
+        raw = raw.pick_types(eeg=True)
     raw = raw.interpolate_bads(reset_bads=False)
 
     return raw
