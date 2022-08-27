@@ -110,7 +110,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             pbar_epochs.update(1)
             # pbar_channels.close()
 
-            print(f'Finished saving images for epoch {i} of {len(cropped_epochs)}')
+            print(f'Finished saving images for epoch {i}. Name={name}')
 
         # pbar_epochs.close()
 
