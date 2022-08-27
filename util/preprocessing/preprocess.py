@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import glob
 import os
+import random
 import uuid
 
 from PIL import Image
@@ -141,17 +142,17 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             continue
 
 
-def load_and_process_hyperparameters(dir: str):
+def load_and_process_hyperparameters(dir: str, shuffle=True):
     print(f'Loading configs from dir: {dir}')
     configs = []
 
-    for config_path in glob.iglob(f'{dir}/**/*.json'):
+    for config_path in glob.iglob(f'{dir}/**/**/*.json'):
         with open(config_path, 'r') as f:
             configs.append(json.load(f))
             # print('Loaded config:', json.load(f))
 
     print(f'Found {len(configs)} to be processed...')
-    return configs
+    return random.shuffle(configs) if shuffle else configs
 
 
 if __name__ == '__main__':
