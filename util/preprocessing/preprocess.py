@@ -78,11 +78,11 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
                 if hypers['PREPROCESSING.DO_REMOVE_EOG']:
                     ica = pipeline.remove_EOG(raw, ica)
             # ica = pipeline.remove_ECG(raw, ica) # Sometimes works, sometimes does not, seems to be an issue with MNE
-            raw = pipeline.apply_ICA_to_RAW(raw, ica)
+                raw = pipeline.apply_ICA_to_RAW(raw, ica)
             del ica  # It is no longer needed, so we delete it from memory
 
             _, _, epochs, _ = pipeline.generate_events(raw)
-            path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{hypers["META.CONFIG_NAME"]}/{unique_id}'
+            path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{hypers["META.CONFIG_NAME"]}/{unique_id} '
             os.makedirs(path, exist_ok=True)
             raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed_raw.fif')
 
@@ -99,7 +99,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
             print('All preprocessing now complete, saving images!')
 
-            pbar_epochs = tqdm(len(cropped_epochs), position=0, desc='Epoch progress')
+            pbar_epochs = tqdm(len(cropped_epochs), desc='Epoch progress')
 
             for i, p in enumerate(zip(cropped_epochs, cropped_epochs.event_id)):
                 epoch, name = p
@@ -158,10 +158,11 @@ if __name__ == '__main__':
     preprocess()
     ALLOW_DEFAULT_CONFIG = False
 
-    for config in load_and_process_hyperparameters('./data/configurations'):
+    configs = load_and_process_hyperparameters('./data/configurations')
+    for i, config in configs:
         if config['META.CONFIG_NAME'] == 'default-config' and not ALLOW_DEFAULT_CONFIG:
             continue
-        print('Now processing with the following configuration:')
+        print(f'Now processing with the following configuration ({i} of {len(configs)}):')
         print(config)
         try:
             preprocess(hypers=config)
