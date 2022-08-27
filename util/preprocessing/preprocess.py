@@ -44,6 +44,8 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
                 continue
             sub_sess_pairs.append((subject, session))
 
+    print(f'Now executing config \'{hypers["META.CONFIG_NAME"]}\' '
+          f'against the following subject and session pairs: {sub_sess_pairs}')
     pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
     k = 0
     for subject, session in sub_sess_pairs:
