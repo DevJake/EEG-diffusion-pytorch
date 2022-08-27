@@ -48,9 +48,12 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         del ica  # It is no longer needed, so we delete it from memory
 
         _, _, epochs, _ = pipeline.generate_events(raw)
+        del raw  # TODO save modified raw file back to disk, in same source directory
 
         A, B, C = ['imagined', 'perceived'], ['guitar', 'penguin', 'flower'], ['text', 'sound', 'pictorial']
         select_epochs = pipeline.select_specific_epochs(epochs, A, B, C)
+        del select_epochs
+
         cropped_epochs = pipeline.crop_epochs(select_epochs)
 
         print('All preprocessing now complete, saving images!')
@@ -84,7 +87,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         pbar_subjects.update(1)
         print(f'Completed preprocessing for subject {subject}, session {session}')
 
-        del raw, select_epochs, cropped_epochs
+        del cropped_epochs
 
 
 preprocess()
