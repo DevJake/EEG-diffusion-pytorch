@@ -10,20 +10,24 @@ from util.preprocessing import pipeline
 import json
 
 
-def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/preprocessing/', montage_file_name='ANTNeuro_montage'):
+def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/preprocessing/',
+               montage_file_name='ANTNeuro_montage', hypers=None):
     assert os.path.exists(f'{eeg_data_dir}/{montage_file_name}.json'), \
         'The specified montage file could not be found! ' \
         'Please check it is in the EEG data directory root.'
     # TODO Process a dictionary of metadata/hyperparameter variations
+    # TODO Load hyperparameter configurations from a given directory, run each
 
-    hyperparameters = {
-        'PER_CHANNEL': True,
-        'PREPROCESSING.MONTAGE': True,
-        'PREPROCESSING.REMOVE_DC': True,
-        'PREPROCESSING.LOW_PASS_FILTER': True,
-        'PREPROCESSING.HIGH_PASS_FILTER': True,
-        'PREPROCESSING.USE_ICA': True
-    }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
+    if hypers is None:
+        # TODO load the default hyperparameters from a configuration file
+        hypers = {
+            'PER_CHANNEL': True,
+            'PREPROCESSING.MONTAGE': True,
+            'PREPROCESSING.REMOVE_DC': True,
+            'PREPROCESSING.LOW_PASS_FILTER': True,
+            'PREPROCESSING.HIGH_PASS_FILTER': True,
+            'PREPROCESSING.USE_ICA': True
+        }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
 
     sub_sess_pairs = []  # subject, session
 
@@ -37,7 +41,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
     pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
 
     for subject, session in sub_sess_pairs:
-        unique_id = str(uuid.uuid5()) # A unique ID for this run
+        unique_id = str(uuid.uuid4())  # A unique ID for this run
 
         raw = pipeline.load_eeg(subject, session)
 
@@ -57,7 +61,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         raw.save()
 
         with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.fif', 'w') as f:
-            json.dump(hyperparameters, f, sort_keys=True, indent=4)
+            json.dump(hypers, f, sort_keys=True, indent=4)
 
         del raw
 
