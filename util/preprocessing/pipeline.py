@@ -63,8 +63,8 @@ def load_eeg(subject: int, session: int):
     try:
         raw = raw.pick_types(eog=False, eeg=True, exclude='bads')  # Effectively drop all EOG channels, leaving just EEG
     except RuntimeError:
-        print('Exception has occurred when picking types, ignoring specific selections and defaulting to EEG only...')
-        raw = raw.pick_types(eeg=True)
+        print('Exception has occurred when ignoring bad channels, selecting without explicit exclusions...')
+        raw = raw.pick_types(eeg=True, eog=False)
     raw = raw.interpolate_bads(reset_bads=False)
 
     return raw
