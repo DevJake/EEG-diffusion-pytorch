@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import glob
 import os
 import uuid
 
@@ -132,8 +132,14 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
 
 def load_and_process_hyperparameters(dir: str):
-    return ''
-    # TODO load all configs, return as a list of dictionaries
+    configs = []
+
+    for config_path in glob.iglob(f'{dir}/*.json'):
+        with open(config_path, 'r') as f:
+            configs.append(json.load(f))
+            print('Loaded config:', json.load(f))
+
+    return configs
 
 
 num_cpu = '8'
