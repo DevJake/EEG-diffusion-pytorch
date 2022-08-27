@@ -1,0 +1,15 @@
+{
+    "META.CONFIG_COMMENT": "Apply no preprocessing",
+    "META.CONFIG_NAME": "raw-high-pass-ica_window_size=1_window_overlap=0.2_use_channels=True_highpass=70_lowpass=0.1",
+    "PREPROCESSING.DO_HIGH_PASS_FILTER": true,
+    "PREPROCESSING.DO_LOW_PASS_FILTER": false,
+    "PREPROCESSING.DO_MONTAGE": false,
+    "PREPROCESSING.DO_REMOVE_DC": false,
+    "PREPROCESSING.DO_REMOVE_EOG": false,
+    "PREPROCESSING.DO_USE_ICA": true,
+    "PREPROCESSING.HIGH_PASS_FILTER.FREQ": 70,
+    "PREPROCESSING.LOW_PASS_FILTER.FREQ": 0.1,
+    "RENDER.DO_PER_CHANNEL": true,
+    "RENDER.WINDOW_OVERLAP": 0.2,
+    "RENDER.WINDOW_WIDTH": 1
+}

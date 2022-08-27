@@ -58,7 +58,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             hypers['META.UUID'] = unique_id
 
             raw = pipeline.load_eeg(subject, session)
-
+            # TODO account for hyperparameter value changes
             raw = pipeline.apply_montage(raw, f'{eeg_data_dir}/{montage_file_name}.json')
             raw = pipeline.remove_DC(raw)
             raw = pipeline.apply_filter(raw,
@@ -134,7 +134,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 def load_and_process_hyperparameters(dir: str):
     configs = []
 
-    for config_path in glob.iglob(f'{dir}/*.json'):
+    for config_path in glob.iglob(f'{dir}/**/*.json'):
         with open(config_path, 'r') as f:
             configs.append(json.load(f))
             print('Loaded config:', json.load(f))

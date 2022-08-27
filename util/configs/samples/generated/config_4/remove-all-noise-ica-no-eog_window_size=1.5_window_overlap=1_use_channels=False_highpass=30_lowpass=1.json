@@ -1,0 +1,15 @@
+{
+    "META.CONFIG_COMMENT": "Remove all noise, use ICA, do not remove EOG noise",
+    "META.CONFIG_NAME": "remove-all-noise-ica-no-eog_window_size=1.5_window_overlap=1_use_channels=False_highpass=30_lowpass=1",
+    "PREPROCESSING.DO_HIGH_PASS_FILTER": true,
+    "PREPROCESSING.DO_LOW_PASS_FILTER": true,
+    "PREPROCESSING.DO_MONTAGE": true,
+    "PREPROCESSING.DO_REMOVE_DC": true,
+    "PREPROCESSING.DO_REMOVE_EOG": false,
+    "PREPROCESSING.DO_USE_ICA": true,
+    "PREPROCESSING.HIGH_PASS_FILTER.FREQ": 30,
+    "PREPROCESSING.LOW_PASS_FILTER.FREQ": 1,
+    "RENDER.DO_PER_CHANNEL": false,
+    "RENDER.WINDOW_OVERLAP": 1,
+    "RENDER.WINDOW_WIDTH": 1.5
+}
