@@ -53,7 +53,9 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
         raw = pipeline.apply_montage(raw, f'{eeg_data_dir}/{montage_file_name}.json')
         raw = pipeline.remove_DC(raw)
-        raw = pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
+        raw = pipeline.apply_filter(raw,
+                                    low_freq=hypers['PREPROCESSING.LOW_PASS_FILTER.FREQ'],
+                                    high_freq=hypers['PREPROCESSING.HIGH_PASS_FILTER.FREQ'])
         ica = pipeline.compute_ICA(raw)
         ica = pipeline.remove_EOG(raw, ica)
         # TODO assert that the use_ica hyperparameter is True
