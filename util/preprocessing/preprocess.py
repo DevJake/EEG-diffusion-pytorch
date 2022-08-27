@@ -72,7 +72,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif')
             # TODO doesn't seem to be saving
 
-            with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.fif', 'w') as f:
+            with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.json', 'w') as f:
                 json.dump(hypers, f, sort_keys=True, indent=4)
 
             del raw
