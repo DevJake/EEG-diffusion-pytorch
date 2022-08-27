@@ -142,6 +142,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
 
 def load_and_process_hyperparameters(dir: str):
+    print(f'Loading configs from dir: {dir}')
     configs = []
 
     for config_path in glob.iglob(f'{dir}/**/*.json'):
@@ -149,6 +150,7 @@ def load_and_process_hyperparameters(dir: str):
             configs.append(json.load(f))
             print('Loaded config:', json.load(f))
 
+    print(f'Found {len(configs)} to be processed...')
     return configs
 
 
