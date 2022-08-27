@@ -130,4 +130,20 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             print(e)
             continue
 
+
+def load_and_process_hyperparameters(dir: str):
+    return '' #TODO
+
+
+num_cpu = '8'
+os.environ['OMP_NUM_THREADS'] = num_cpu
 preprocess()
+
+for config in load_and_process_hyperparameters('./data/configurations'):
+    if config['META.CONFIG_NAME'] == 'default-config':
+        continue
+    print('Now processing with the following configuration:')
+    print(config)
+    preprocess(hypers=config)
+
+print('Every config has now been processed, hurray! Terminating...')
