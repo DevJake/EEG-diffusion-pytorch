@@ -46,6 +46,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
     pbar_subjects = tqdm(len(sub_sess_pairs), desc='Subjects and Sessions')
 
     for subject, session in sub_sess_pairs:
+        print(f'Now preprocessing data for Subject {subject}, session {session}')
         unique_id = str(uuid.uuid4())  # A unique ID for this run
 
         raw = pipeline.load_eeg(subject, session)
@@ -101,6 +102,8 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
             pbar_epochs.update(1)
             # pbar_channels.close()
+
+            print(f'Finished saving images for epoch {i} of {len(cropped_epochs)}')
 
         # pbar_epochs.close()
 
