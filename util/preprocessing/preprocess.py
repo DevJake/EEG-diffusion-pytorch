@@ -50,7 +50,14 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         del ica  # It is no longer needed, so we delete it from memory
 
         _, _, epochs, _ = pipeline.generate_events(raw)
-        del raw  # TODO save modified raw file back to disk, in same source directory
+        path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{unique_id}'
+        os.makedirs(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif', exist_ok=True)
+        raw.save()
+
+        with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.fif', 'w') as f:
+            json.dump(hyperparameters, f, sort_keys=True, indent=4)
+
+        del raw
 
         A, B, C = ['imagined', 'perceived'], ['guitar', 'penguin', 'flower'], ['text', 'sound', 'pictorial']
         select_epochs = pipeline.select_specific_epochs(epochs, A, B, C)
