@@ -74,8 +74,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             _, _, epochs, _ = pipeline.generate_events(raw)
             path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{hypers["META.CONFIG_NAME"]}/{unique_id}'
             os.makedirs(path, exist_ok=True)
-            raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif')
-            # TODO doesn't seem to be saving
+            raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed_raw.fif')
 
             with open(f'{path}/sub_{subject}_sess_{session}_hyperparams.json', 'w') as f:
                 json.dump(hypers, f, sort_keys=True, indent=4)
