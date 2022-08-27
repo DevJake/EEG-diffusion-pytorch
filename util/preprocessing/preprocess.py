@@ -84,7 +84,11 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         for i, p in enumerate(zip(cropped_epochs, cropped_epochs.event_id)):
             epoch, name = p
             images = pipeline.generate_eeg_dataset(
-                epoch.squeeze())  # Remove outer dimension as this is just 1, so useless
+                epoch.squeeze(),
+                per_channel=hypers['RENDER.DO_PER_CHANNEL'],
+                window_width_seconds=hypers['RENDER.WINDOW_WIDTH'],
+                window_overlap_seconds=hypers['RENDER.WINDOW_OVERLAP']
+            )  # Remove outer dimension as this is just 1, so useless
             # pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress')
 
             for c, channel in enumerate(images):
