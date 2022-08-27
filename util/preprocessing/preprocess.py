@@ -7,11 +7,13 @@ from PIL import Image
 from tqdm import tqdm
 
 from util.preprocessing import pipeline
+import json
 
 
-def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/preprocessing/'):
-    # TODO assert montage file exists
-    # TODO put parameters into a 'metadata' dictionary and save it as a json file to the appropriate directory
+def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/preprocessing/', montage_file_name='ANTNeuro_montage'):
+    assert os.path.exists(f'{eeg_data_dir}/{montage_file_name}.json'), \
+        'The specified montage file could not be found! ' \
+        'Please check it is in the EEG data directory root.'
     # TODO Process a dictionary of metadata/hyperparameter variations
 
     hyperparameters = {
@@ -39,7 +41,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
 
         raw = pipeline.load_eeg(subject, session)
 
-        raw = pipeline.apply_montage(raw, './data/ANTNeuro_montage.json')
+        raw = pipeline.apply_montage(raw, f'{eeg_data_dir}/{montage_file_name}.json')
         raw = pipeline.remove_DC(raw)
         raw = pipeline.apply_filter(raw, low_freq=0.1, high_freq=50)
         ica = pipeline.compute_ICA(raw)
