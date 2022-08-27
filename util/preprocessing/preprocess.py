@@ -31,7 +31,8 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             'PREPROCESSING.LOW_PASS_FILTER.FREQ': 0.1,
             'PREPROCESSING.HIGH_PASS_FILTER.FREQ': 50,
             'RENDER.WINDOW_WIDTH': 1,
-            'RENDER.WINDOW_OVERLAP': 0.5
+            'RENDER.WINDOW_OVERLAP': 0.5,
+            'META.CONFIG_NAME': 'config-1'
         }  # TODO add settings to hyperparameters, such as high and low pass amounts, not just toggles for stuff
 
     sub_sess_pairs = []  # subject, session
@@ -51,6 +52,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
         try:
             unique_id = str(uuid.uuid4())  # A unique ID for this run
             print('The unique ID for this subject/session pairing is', unique_id)
+            hypers['META.UUID'] = unique_id
 
             raw = pipeline.load_eeg(subject, session)
 
@@ -67,7 +69,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
             del ica  # It is no longer needed, so we delete it from memory
 
             _, _, epochs, _ = pipeline.generate_events(raw)
-            path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{unique_id}'
+            path = f'{eeg_data_dir}/preprocessed/Subject {subject}/Session {session}/{hypers["META.CONFIG_NAME"]}/{unique_id}'
             os.makedirs(path, exist_ok=True)
             raw.save(f'{path}/sub_{subject}_sess_{session}_preprocessed.fif')
             # TODO doesn't seem to be saving
@@ -98,7 +100,7 @@ def preprocess(eeg_data_dir='./data/subjects', output_dir='./data/outputs/prepro
                 # pbar_channels = tqdm(images.shape[0], position=1, desc='Channel progress')
 
                 for c, channel in enumerate(images):
-                    dir = f'{output_dir}/subject_{subject}/session_{session}/channel_{c}'
+                    dir = f'{output_dir}/subject_{subject}/session_{session}/{hypers["META.CONFIG_NAME"]}/{unique_id}/channel_{c}'
                     os.makedirs(dir, exist_ok=True)
                     # pbar_event = tqdm(channel.shape[0], position=2, desc='Event progress')
                     for e, event in enumerate(channel):
