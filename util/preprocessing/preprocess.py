@@ -155,9 +155,9 @@ def load_and_process_hyperparameters(dir: str):
 
 
 if __name__ == '__main__':
+    print('Here we go...')
     num_cpu = '8'
     os.environ['OMP_NUM_THREADS'] = num_cpu
-    preprocess()
     ALLOW_DEFAULT_CONFIG = False
 
     configs = load_and_process_hyperparameters('./data/configurations')
