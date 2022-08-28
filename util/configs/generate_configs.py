@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import uuid
+import util.preprocessing.pipeline as pipe
 
 if __name__ == '__main__':
     samples_dir = './samples'
@@ -10,7 +11,8 @@ if __name__ == '__main__':
     with open(f'./variations.json', 'r') as f:
         variations = json.load(f)
 
-    # TODO check that the window and overlap sizes in the variations file are valid
+    for w, _ in variations['window_overlap']:
+        assert len(pipe.get_output_dims_by_factors(w * 1024)) > 0, f'No factor pairs exist for a window width of {w}!'
 
     combinations = [
         [window_overlap, use_channels, high_pass, low_pass]
