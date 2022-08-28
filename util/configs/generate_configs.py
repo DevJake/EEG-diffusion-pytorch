@@ -10,6 +10,8 @@ if __name__ == '__main__':
     with open(f'./variations.json', 'r') as f:
         variations = json.load(f)
 
+    # TODO check that the window and overlap sizes in the variations file are valid
+
     combinations = [
         [window_overlap, use_channels, high_pass, low_pass]
         for window_overlap in variations['window_overlap']
@@ -18,7 +20,8 @@ if __name__ == '__main__':
         for low_pass in variations['low_pass']
     ]
 
-    print(f'Loaded {len(combinations)} total variants...')
+
+    print(f'Calculated {len(combinations)} total variants...')
     print(f'Estimated configuration count is {len(combinations) * len(list(glob.iglob(samples_dir + "/**.json")))}')
 
     for i, sample in enumerate(glob.iglob(f'{samples_dir}/*.json')):
