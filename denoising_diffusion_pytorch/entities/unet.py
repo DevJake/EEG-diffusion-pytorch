@@ -3,8 +3,9 @@ from functools import partial
 import torch
 from torch import nn
 
-from denoising_diffusion_pytorch.diffusion_models.denoising_diffusion_pytorch import default, ResnetBlock, LearnedSinusoidalPosEmb, \
-    SinusoidalPosEmb, Residual, PreNorm, LinearAttention, downsample, Attention, upsample
+from denoising_diffusion_pytorch.diffusion_models.components import Residual, PreNorm, SinusoidalPositionalEmbedding, \
+    LearnedSinusoidalPositionalEmbedding, ResnetBlock, LinearAttention, Attention
+from denoising_diffusion_pytorch.utils import upsample, downsample, default
 
 
 class Unet(nn.Module):
@@ -46,10 +47,10 @@ class Unet(nn.Module):
         self.learned_sinusoidal_cond = learned_sinusoidal_cond
 
         if learned_sinusoidal_cond:  # TODO determine if we want to use this
-            sinu_pos_emb = LearnedSinusoidalPosEmb(learned_sinusoidal_dim)
+            sinu_pos_emb = LearnedSinusoidalPositionalEmbedding(learned_sinusoidal_dim)
             fourier_dim = learned_sinusoidal_dim + 1
         else:
-            sinu_pos_emb = SinusoidalPosEmb(dim)
+            sinu_pos_emb = SinusoidalPositionalEmbedding(dim)
             fourier_dim = dim
 
         self.time_mlp = nn.Sequential(

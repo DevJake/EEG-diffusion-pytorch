@@ -8,13 +8,11 @@ from PIL import Image
 from accelerate import Accelerator
 from ema_pytorch import EMA
 from torch import nn
+from torch.nn import functional as F
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms as T, utils
 from tqdm.auto import tqdm
-
-from denoising_diffusion_pytorch.diffusion_models.denoising_diffusion_pytorch import has_int_square_root, cycle, \
-    num_to_groups
 
 
 def exists(x):
@@ -216,3 +214,84 @@ class Trainer(object):
                 pbar.update(1)
 
         accelerator.print('Training complete!')
+
+
+def cycle(dl):
+    while True:
+        for data in dl:
+            yield data
+
+
+def has_int_square_root(num):
+    return (math.sqrt(num) ** 2) == num
+
+
+def num_to_groups(num, divisor):
+    groups = num // divisor
+    remainder = num % divisor
+    arr = [divisor] * groups
+    if remainder > 0:
+        arr.append(remainder)
+    return arr
+
+
+def convert_image_to(img_type, image):
+    if image.mode != img_type:
+        return image.convert(img_type)
+    return image
+
+
+def l2norm(t):
+    return F.normalize(t, dim=-1)
+
+
+def normalise_to_negative_one_to_one(img):
+    return img * 2 - 1
+
+
+def unnormalise_to_zero_to_one(t):
+    return (t + 1) * 0.5
+
+
+def upsample(dim, dim_out=None):
+    return nn.Sequential(
+        nn.Upsample(scale_factor=2, mode='nearest'),
+        nn.Conv2d(dim, default(dim_out, dim), 3, padding=1)
+    )
+
+
+def downsample(dim, dim_out=None):
+    return nn.Conv2d(dim, default(dim_out, dim), 4, 2, 1)
+
+
+def extract(a, t, x_shape):
+    b, *_ = t.shape
+    out = a.gather(-1, t)
+    return out.reshape(b, *((1,) * (len(x_shape) - 1)))
+
+
+def linear_beta_schedule(timesteps):
+    scale = 1000 / timesteps
+    beta_start = scale * 0.0001
+    beta_end = scale * 0.02
+    return torch.linspace(beta_start, beta_end, timesteps, dtype=torch.float64)
+
+
+def cosine_beta_schedule(timesteps, s=0.008):
+    """
+    # TODO add comment on what parameter 's' does/is
+    Cosine beta schedule
+    as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
+    """
+    steps = timesteps + 1
+    x = torch.linspace(0, timesteps, steps, dtype=torch.float64)
+    alphas_cumprod = torch.cos(((x / timesteps) + s) / (1 + s) * math.pi * 0.5) ** 2
+    alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
+    betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
+    return torch.clip(betas, 0, 0.999)
+
+
+def default(val, d):
+    if exists(val):
+        return val
+    return d() if callable(d) else d
