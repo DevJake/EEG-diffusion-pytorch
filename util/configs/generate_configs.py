@@ -20,7 +20,6 @@ if __name__ == '__main__':
         for low_pass in variations['low_pass']
     ]
 
-
     print(f'Calculated {len(combinations)} total variants...')
     print(f'Estimated configuration count is {len(combinations) * len(list(glob.iglob(samples_dir + "/**.json")))}')
 
