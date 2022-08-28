@@ -6,7 +6,7 @@ from einops import reduce, rearrange
 from torch import nn, einsum
 from torch.nn import functional as F
 
-from denoising_diffusion_pytorch.utils import exists, l2norm
+from denoising_diffusion_pytorch.utils import exists, compute_L2_norm
 
 
 class Residual(nn.Module):
@@ -181,7 +181,7 @@ class Attention(nn.Module):
         qkv = self.to_qkv(x).chunk(3, dim=1)
         q, k, v = map(lambda t: rearrange(t, 'b (h c) x y -> b h c (x y)', h=self.heads), qkv)
 
-        q, k = map(l2norm, (q, k))
+        q, k = map(compute_L2_norm, (q, k))
 
         sim = einsum('b h d i, b h d j -> b h i j', q, k) * self.scale
         attn = sim.softmax(dim=-1)

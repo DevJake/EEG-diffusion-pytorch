@@ -241,7 +241,11 @@ def convert_image_to(img_type, image):
     return image
 
 
-def l2norm(t):
+def compute_L2_norm(t):
+    """
+    Compute the L2 normalised value for some given value t.
+    :param t: The value to compute the L2 norm against.
+    """
     return F.normalize(t, dim=-1)
 
 
