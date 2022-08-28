@@ -159,6 +159,8 @@ class Trainer(object):
             self.results_folder = Path(results_folder)
             self.results_folder.mkdir(exist_ok=True)
 
+            wandb.watch(self.ema.ema_model)
+
         # step counter state
 
         self.step = 0
