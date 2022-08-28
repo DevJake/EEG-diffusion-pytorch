@@ -1,15 +1,14 @@
-import math
 from collections import namedtuple
-from functools import partial
 from random import random
 
 import torch
 import torch.nn.functional as F
-from einops import rearrange, reduce
-from torch import nn, einsum
+from einops import reduce
+from torch import nn
 from tqdm.auto import tqdm
 
-from denoising_diffusion_pytorch.utils import exists
+from denoising_diffusion_pytorch.utils import normalise_to_negative_one_to_one, \
+    unnormalise_to_zero_to_one, extract, linear_beta_schedule, cosine_beta_schedule, default
 
 # constants
 
