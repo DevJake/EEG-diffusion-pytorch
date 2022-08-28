@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 from denoising_diffusion_pytorch.utils import normalise_to_negative_one_to_one, \
     unnormalise_to_zero_to_one, extract, linear_beta_schedule, cosine_beta_schedule, default
 
-# constants
+# Constants
 ModelPrediction = namedtuple('ModelPrediction', ['pred_noise', 'pred_x_start'])
 
 
@@ -147,6 +147,9 @@ class GaussianDiffusion(nn.Module):
         return ModelPrediction(predicted_noise, x_0)
 
     def p_mean_variance(self, x, t, x_self_cond=None, clip_denoised=True):
+        """
+        This method computes the mean and variance by sampling directly from the model.
+        """
         preds = self.model_predictions(x, t, x_self_cond)
         x_start = preds.pred_x_start
 
@@ -170,14 +173,13 @@ class GaussianDiffusion(nn.Module):
         model_mean, _, model_log_variance, x_start = self.p_mean_variance(x=x, t=batched_times, x_self_cond=x_self_cond,
                                                                           clip_denoised=clip_denoised)
         noise = torch.randn_like(x) if t > 0 else 0.
-        # Reset noise if t is zero, i.e., if we now have the output image of the model.
+        # Reset noise if t == zero, i.e., if we now have the output image of the model.
+        # This nulls-out the following operation, preserving the output image.
         pred_img = model_mean + (0.5 * model_log_variance).exp() * noise
         return pred_img, x_start
 
     @torch.no_grad()
     def p_sample_loop(self, shape, device):
-        # batch_size = shape[0]
-
         img = torch.randn(shape, device=device)
 
         x_start = None
@@ -277,12 +279,11 @@ class GaussianDiffusion(nn.Module):
         # b, c, h, w = x_start.shape # Commented out as these values are not used
 
         noise = default(noise, lambda: torch.randn_like(x_start))
-
-        # noise sample
+        # A random noise sample
 
         x = self.q_sample(x_start=x_start, t=t, noise=noise)
 
-        # if doing self-conditioning, 50% of the time, predict x_start from current set of times
+        # If doing self-conditioning, 50% of the time, predict x_start from current set of times
         # and condition unet with that
         # this technique will slow down training by 25%, but seems to lower FID significantly
 
@@ -320,8 +321,3 @@ class GaussianDiffusion(nn.Module):
 
         img = normalise_to_negative_one_to_one(img)
         return self.p_losses(img, t, *args, **kwargs)
-
-# Dataset classes
-
-
-# Trainer class
