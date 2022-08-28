@@ -94,7 +94,6 @@ class GaussianDiffusion(nn.Module):
         # calculations for posterior q(x_{t-1} | x_t, x_0)
 
         posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
-
         # above: equal to 1. / (1. / (1. - alpha_cumprod_tm1) + alpha_t / beta_t)
 
         register_buffer('posterior_variance', posterior_variance)
@@ -158,7 +157,14 @@ class GaussianDiffusion(nn.Module):
         return model_mean, posterior_variance, posterior_log_variance, x_start
 
     @torch.no_grad()
-    def p_sample(self, x, t: int, x_self_cond=None, clip_denoised=True):
+    def compute_sample_for_timestep(self, x, t: int, x_self_cond=None, clip_denoised=True):
+        """
+        This method takes a single step in the sampling/forwards process. For example, in a forwards process with 250
+        sampling steps, this method will be called 250 times.
+        :param x: The current image for the given timestep t. If t=T, then we are at the beginning of the forwards
+        process, and x will be an isotropic Gaussian noise sample.
+        :param t: The current sampling timestep that defines x_T, where 0 <= t <= T.
+        """
         b, *_, device = *x.shape, x.device
         batched_times = torch.full((x.shape[0],), t, device=x.device, dtype=torch.long)
         model_mean, _, model_log_variance, x_start = self.p_mean_variance(x=x, t=batched_times, x_self_cond=x_self_cond,
@@ -178,7 +184,7 @@ class GaussianDiffusion(nn.Module):
 
         for t in tqdm(reversed(range(0, self.num_timesteps)), desc='Sampling loop time step', total=self.num_timesteps):
             self_cond = x_start if self.self_condition else None
-            img, x_start = self.p_sample(img, t, self_cond)
+            img, x_start = self.compute_sample_for_timestep(img, t, self_cond)
 
         img = unnormalise_to_zero_to_one(img)
         return img
@@ -245,7 +251,7 @@ class GaussianDiffusion(nn.Module):
 
         img = (1 - lam) * xt1 + lam * xt2
         for i in tqdm(reversed(range(0, t)), desc='interpolation sample time step', total=t):
-            img = self.p_sample(img, torch.full((b,), i, device=device, dtype=torch.long))
+            img = self.compute_sample_for_timestep(img, torch.full((b,), i, device=device, dtype=torch.long))
 
         return img
 
