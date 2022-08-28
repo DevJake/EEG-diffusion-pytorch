@@ -22,12 +22,23 @@ def exists(x):
 class Dataset(Dataset):
     def __init__(
             self,
-            folder,
-            image_size,
-            exts=None,
+            folder,  # TODO load images recursively.
+            image_size: int,
+            exts: list = None,
             augment_horizontal_flip=False,
-            convert_image_to_ext=None
+            convert_image_to=None
     ):
+        """
+        This class loads images from a given directory and resizes them to be square.
+
+        :param folder: The folder that contains the files for this dataset.
+        :param int image_size: The dimensions for the given image. All images will be converted to a square with these dimensions.
+        :param list exts: A list of extensions that this class should load.
+        :param augment_horizontal_flip: If a horizontal (left-to-right) flip of the image should be performed.
+        :param convert_image_to: A given lambda function specifying how to convert the input images
+        for this dataset. This is applied before any other manipulations, such as resizing or
+        horizontal flipping.
+        """
         super().__init__()
         if exts is None:
             exts = ['jpg', 'jpeg', 'png', 'tiff']
@@ -35,11 +46,15 @@ class Dataset(Dataset):
         self.image_size = image_size
         self.paths = [p for ext in exts for p in Path(f'{folder}').glob(f'**/*.{ext}')]
 
-        maybe_convert_fn = partial(convert_image_to_ext, convert_image_to_ext) if exists(
-            convert_image_to_ext) else nn.Identity()
+        lambda_convert_function = partial(convert_image_to, convert_image_to) if exists(
+            convert_image_to) else nn.Identity()  # TODO determine what this does
+        # nn.Identity simply returns the input.
+        # So, if convert_image_to is None,
+        # lambda_convert_function will just return whatever is input to it
 
         self.transform = T.Compose([
-            T.Lambda(maybe_convert_fn),
+            T.Lambda(lambda_convert_function),
+            # Execute some lambda of code to convert an image of the dataset by, such as greyscaling.
             T.Resize(image_size),
             T.RandomHorizontalFlip() if augment_horizontal_flip else nn.Identity(),
             T.CenterCrop(image_size),
@@ -47,25 +62,36 @@ class Dataset(Dataset):
         ])
 
     def __len__(self):
+        """
+        Return the number of images to be loaded for this dataset.
+        """
         return len(self.paths)
 
     def __getitem__(self, index):
+        """
+        Return the given image for the given index in this dataset.
+        """
         path = self.paths[index]
         img = Image.open(path)
         return self.transform(img)
 
 
 class Trainer(object):
+    """
+    This class is responsible for the training, sampling and saving loops that
+    take place when interacting with the model.
+    """
+
     def __init__(
             self,
             diffusion_model,
-            folder,  # Folder where the training images exist
+            training_images_dir,  # Folder where the training images exist
             # TODO add a secondary folder for the target image-class pairings
             # TODO add a means of loading and reading in those image-class pairings
             *,
             train_batch_size=16,
             gradient_accumulate_every=1,
-            augment_horizontal_flip=True,
+            augment_horizontal_flip=True,  # Flip image from left-to-right
             train_lr=1e-4,
             train_num_steps=100000,
             ema_update_every=10,
@@ -74,12 +100,12 @@ class Trainer(object):
             save_and_sample_every=1000,
             num_samples=25,
             results_folder='./results',
-            amp=False,
-            fp16=False,
+            amp=False,  # Used mixed precision during training
+            fp16=False,  # Use Floating-Point 16-bit precision
             # TODO might be able to enable fp16 without affecting amp,
             #  allowing for the model to train on TPUs
             split_batches=True,
-            convert_image_to=None
+            convert_image_to_ext=None  # A given extension to convert image types to
     ):
         super().__init__()
 
@@ -104,8 +130,8 @@ class Trainer(object):
 
         # dataset and dataloader
 
-        self.ds = Dataset(folder, self.image_size, augment_horizontal_flip=augment_horizontal_flip,
-                          convert_image_to_ext=convert_image_to)
+        self.ds = Dataset(training_images_dir, self.image_size, augment_horizontal_flip=augment_horizontal_flip,
+                          convert_image_to=convert_image_to_ext)
         dl = DataLoader(self.ds, batch_size=train_batch_size, shuffle=True, pin_memory=True, num_workers=cpu_count())
 
         dl = self.accelerator.prepare(dl)
@@ -282,8 +308,8 @@ def linear_beta_schedule(timesteps):
 
 
 def cosine_beta_schedule(timesteps, s=0.008):
-    """
     # TODO add comment on what parameter 's' does/is
+    """
     Cosine beta schedule
     as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
     """
