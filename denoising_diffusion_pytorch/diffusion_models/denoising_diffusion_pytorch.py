@@ -22,13 +22,13 @@ ModelPrediction = namedtuple('ModelPrediction', ['pred_noise', 'pred_x_start'])
 class GaussianDiffusion(nn.Module):
     def __init__(
             self,
-            model,
+            learning_model,
             *,
             image_size,
             timesteps=1000,
             sampling_timesteps=None,
             loss_type='l1',
-            objective='pred_noise',  # TODO add new objective
+            training_objective='pred_noise',  # TODO add new objective
             beta_schedule='cosine',
             p2_loss_weight_gamma=0.,
             # p2 loss weight, from https://arxiv.org/abs/2204.00227 - 0 is equivalent to weight of 1 across time - 1.
@@ -36,6 +36,20 @@ class GaussianDiffusion(nn.Module):
             p2_loss_weight_k=1,
             ddim_sampling_eta=1.
     ):
+        """
+        This class provides all important logic and behaviour for the base Gaussian Diffusion model.
+
+        :param learning_model: The model used for learning the forwards diffusion process from x_T to x_0.
+        This is typically a U-Net model, inline with the literature.
+        :param image_size: The single dimension for the output image.
+        For example, a value of 32 will produce a 32x32 pixel image output.
+        :param timesteps: The number of timesteps to be used for the forward and reverse processes of the model.
+        :param sampling_timesteps: The number of timesteps to be used for sampling.
+        If this is less than param timesteps, then we are using Improved DDPM.
+        :param loss_type: The type of loss we will use. This can be either L1 or L2 loss.
+        :param training_objective: The objective that dictates what the model attempts to learn.
+        This must be either pred_noise to learn noise, or pred_x0 to learn the truth image.
+        """
         super().__init__()
         assert not (type(self) == GaussianDiffusion and model.channels != model.out_dim)
         # Why the negated assertion? Rewrite the assertion
@@ -43,31 +57,19 @@ class GaussianDiffusion(nn.Module):
         self.model = model
         self.channels = self.model.channels
         self.self_condition = self.model.self_condition
-
         self.image_size = image_size
+        self.objective = training_objective
 
-        self.objective = objective
-
-        assert objective in {'pred_noise', 'pred_x0'}, \
-            'The given objective must be either pred_noise (predict noise) or pred_x0 ' \
-            '(predict image start) '
-
-        if beta_schedule == 'linear':
-            betas = linear_beta_schedule(timesteps)
-        elif beta_schedule == 'cosine':
-            betas = cosine_beta_schedule(timesteps)
-        else:
-            raise ValueError(f'Unknown beta schedule specified: {beta_schedule}')
-
+        betas = linear_beta_schedule(timesteps) if beta_schedule is 'linear' else cosine_beta_schedule(timesteps)
         alphas = 1. - betas
         alphas_cumprod = torch.cumprod(alphas, axis=0)
         alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.)
 
-        timesteps, = betas.shape
+        timesteps = betas.shape
         self.num_timesteps = int(timesteps)
         self.loss_type = loss_type
 
-        # sampling related parameters
+        # Sampling-related parameters
 
         self.sampling_timesteps = default(sampling_timesteps, timesteps)
         # The default number of sampling timesteps. Reduced for Improved DDPM
@@ -179,7 +181,18 @@ class GaussianDiffusion(nn.Module):
         return pred_img, x_start
 
     @torch.no_grad()
-    def p_sample_loop(self, shape, device):
+    def compute_complete_sample(self, shape, device):
+        """
+        This method simply runs a for loop used for computing the series of samples from x_T through to x_0.
+        The returned value is the final output image of the model.
+
+        A progress bar is provided by the tqdm library throughout.
+
+        :param shape: The shape of the output, not the image output.
+        Specifically, this is set to the batch size x n_channels , determining how
+        many samples should be generated in one iteration.
+        :param device: The device to use for computing the samples on.
+        """
         img = torch.randn(shape, device=device)
 
         x_start = None
@@ -189,6 +202,7 @@ class GaussianDiffusion(nn.Module):
             img, x_start = self.compute_sample_for_timestep(img, t, self_cond)
 
         img = unnormalise_to_zero_to_one(img)
+        # TODO unclear what this does
         return img
 
     @torch.no_grad()
@@ -236,10 +250,16 @@ class GaussianDiffusion(nn.Module):
 
     @torch.no_grad()
     def sample(self, batch_size, device):
+        """
+        This method computes a given number of samples from the model in one sampling step.
+        This method does not execute the many inferences required to draw a sample
+        but instead determines which sampling strategy to use (standard or reduced sample step count),
+        image output dimensions and batch sizes.
+        """
         batch_size = 16 if batch_size is None else batch_size  # default value
         image_size, channels = self.image_size, self.channels
-        sample_fn = self.p_sample_loop if not self.is_ddim_sampling else self.ddim_sample
-        return sample_fn((batch_size, channels, image_size, image_size), device)
+        sampling_function = self.ddim_sample if self.is_ddim_sampling else self.compute_complete_sample
+        return sampling_function((batch_size, channels, image_size, image_size), device)
 
     @torch.no_grad()
     def interpolate(self, x1, x2, t=None, lam=0.5):
@@ -259,6 +279,8 @@ class GaussianDiffusion(nn.Module):
 
     def q_sample(self, x_start, t, noise=None):
         noise = default(noise, lambda: torch.randn_like(x_start))
+        # Uses the supplied noise value if it exists,
+        # or generates more Gaussian noise with the same dimensions as x_start
 
         return (
                 extract(self.sqrt_alphas_cumprod, t, x_start.shape) * x_start +
@@ -267,9 +289,17 @@ class GaussianDiffusion(nn.Module):
 
     @property
     def loss_fn(self):
-        if self.loss_type == 'l1':
+        """
+        This function does not compute the loss for two given images (truth and predicted),
+        but instead returns the appropriate loss function in accordance with the stated
+        desired loss function.
+
+        Given that this method returns a function, then any parameters supplied are
+        naturally passed into that function, thus deriving the loss value.
+        """
+        if self.loss_type.lower() is 'l1':
             return F.l1_loss
-        elif self.loss_type == 'l2':
+        elif self.loss_type.lower() is 'l2':
             return F.mse_loss
         # TODO explore alternative loss types, unlikely they will be of value however
         else:
@@ -281,6 +311,7 @@ class GaussianDiffusion(nn.Module):
         This effectively performs the full noising then denoising/diffusion process.
         After this, the losses between the true image and the generated image (via the diffusion process)
         are compared, their losses computed, and returned.
+
         :param x_start: The given image, x_0, to use for bother processes.
         :param noise: A sample of noise to be applied to the given x_start value.
         """
@@ -308,7 +339,7 @@ class GaussianDiffusion(nn.Module):
                 x_self_cond.detach_()
 
         # Next we predict the output according to our objective,
-        # then take a gradient step from that result
+        # then compute the gradient from that result
         model_out = self.model(x, t, x_self_cond)  # The prediction of our model
 
         if self.objective == 'pred_noise':
@@ -327,7 +358,8 @@ class GaussianDiffusion(nn.Module):
 
         loss = self.loss_fn(model_out, target, reduction='none')
         # TODO substitute target for a relevant class image.
-        #  Need to pass in information on the EEG sample's class and a dataset to load corresponding class images
+        #  Need to pass in information on the EEG sample's
+        #  class and a dataset to load corresponding class images
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, t, loss.shape)

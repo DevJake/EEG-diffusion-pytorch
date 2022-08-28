@@ -16,6 +16,11 @@ from tqdm.auto import tqdm
 
 
 def exists(x):
+    """
+    This method checks if the given parameter is not equal to None, i.e., if it has a value.
+
+    :param x: The value to be checked for None-status.
+    """
     return x is not None
 
 
@@ -142,7 +147,7 @@ class Trainer(object):
 
         # optimizer
 
-        self.opt = Adam(diffusion_model.parameters(), lr=train_lr, betas=adam_betas)
+        self.optimiser = Adam(diffusion_model.parameters(), lr=train_lr, betas=adam_betas)
 
         # for logging results in a folder periodically
 
@@ -158,7 +163,7 @@ class Trainer(object):
 
         # prepare model, dataloader, optimizer with accelerator
 
-        self.model, self.opt = self.accelerator.prepare(self.model, self.opt)
+        self.model, self.optimiser = self.accelerator.prepare(self.model, self.optimiser)
 
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
@@ -167,7 +172,7 @@ class Trainer(object):
         data = {
             'step': self.step,
             'model': self.accelerator.get_state_dict(self.model),
-            'opt': self.opt.state_dict(),
+            'opt': self.optimiser.state_dict(),
             'ema': self.ema.state_dict(),
             'scaler': self.accelerator.scaler.state_dict() if exists(self.accelerator.scaler) else None
         }
@@ -181,7 +186,7 @@ class Trainer(object):
         model.load_state_dict(data['model'])
 
         self.step = data['step']
-        self.opt.load_state_dict(data['opt'])
+        self.optimiser.load_state_dict(data['opt'])
         self.ema.load_state_dict(data['ema'])
 
         if exists(self.accelerator.scaler) and exists(data['scaler']):
@@ -212,8 +217,8 @@ class Trainer(object):
 
                 accelerator.wait_for_everyone()
 
-                self.opt.step()
-                self.opt.zero_grad()
+                self.optimiser.step()
+                self.optimiser.zero_grad()
 
                 accelerator.wait_for_everyone()
 
@@ -294,8 +299,19 @@ def upsample(dim, dim_out=None):
     )
 
 
-def downsample(dim, dim_out=None):
-    return nn.Conv2d(dim, default(dim_out, dim), 4, 2, 1)
+def downsample(input_channel_dims, output_channel_dims=None):
+    """
+    This method creates a downsampling convolutional layer of the U-Net architecture.
+    
+    :param input_channel_dims: The channel dimensions for the input to the layer.
+    :param output_channel_dims: The channel dimensions for the output of the layer.
+    """
+    return nn.Conv2d(
+        in_channels=input_channel_dims,
+        out_channels=default(output_channel_dims, input_channel_dims),
+        kernel_size=4,
+        stride=2,
+        padding=1)
 
 
 def extract(a, t, x_shape):
@@ -325,7 +341,15 @@ def cosine_beta_schedule(timesteps, s=0.008):
     return torch.clip(betas, 0, 0.999)
 
 
-def default(val, d):
+def default(val, func):
+    """
+    This method simply checks if the parameter val exists.
+    If it does not, parameter func is either returned,
+    or executed if it is itself a function.
+
+    :param val: The value to be checked for its existence. See method exists for more.
+    :param func: The value or function to be returned or executed (respectively) if val does not exist.
+    """
     if exists(val):
         return val
-    return d() if callable(d) else d
+    return func() if callable(func) else func

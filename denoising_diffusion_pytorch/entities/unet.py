@@ -24,6 +24,9 @@ class Unet(nn.Module):
             learned_sinusoidal_cond=False,
             learned_sinusoidal_dim=16  # Per Improved DDPM
     ):
+        """
+        :param channels: A multiplier for each channel's layer count.
+        """
         super().__init__()
 
         # determine dimensions
