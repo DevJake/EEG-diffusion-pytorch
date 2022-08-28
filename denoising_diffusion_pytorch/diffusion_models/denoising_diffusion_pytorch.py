@@ -51,10 +51,20 @@ class GaussianDiffusion(nn.Module):
         This must be either pred_noise to learn noise, or pred_x0 to learn the truth image.
         """
         super().__init__()
-        assert not (type(self) == GaussianDiffusion and model.channels != model.out_dim)
-        # Why the negated assertion? Rewrite the assertion
+        loss_type = loss_type.lower()
+        training_objective = training_objective.lower()
+        beta_schedule = beta_schedule.lower()
 
-        self.model = model
+        assert loss_type in ['l1', 'l2'], f'The specified loss type, {loss_type}, must be either L1 or L2.'
+        assert training_objective in ['pred_noise', 'pred_x0'], \
+            'The given objective must be either pred_noise (predict noise) or pred_x0 (predict image start)'
+        assert beta_schedule in ['linear', 'cosine'], f'The given beta schedule {beta_schedule} is invalid!'
+        assert not (type(self) != GaussianDiffusion and learning_model.channels == learning_model.out_dim)
+        # TODO add an assertion error message
+        assert sampling_timesteps is None or 0 < sampling_timesteps <= timesteps, \
+            'The given sampling timesteps value is invalid!'
+
+        self.model = learning_model
         self.channels = self.model.channels
         self.self_condition = self.model.self_condition
         self.image_size = image_size
