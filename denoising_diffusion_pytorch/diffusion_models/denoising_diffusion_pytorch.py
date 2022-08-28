@@ -275,44 +275,72 @@ class GaussianDiffusion(nn.Module):
         else:
             raise ValueError(f'invalid loss type {self.loss_type}')
 
-    def p_losses(self, x_start, t, noise=None):
+    def compute_loss_for_timestep(self, x_start, t, noise=None):
+        """
+        This method computes the losses for a full pass of a given image through the model.
+        This effectively performs the full noising then denoising/diffusion process.
+        After this, the losses between the true image and the generated image (via the diffusion process)
+        are compared, their losses computed, and returned.
+        :param x_start: The given image, x_0, to use for bother processes.
+        :param noise: A sample of noise to be applied to the given x_start value.
+        """
         # b, c, h, w = x_start.shape # Commented out as these values are not used
 
         noise = default(noise, lambda: torch.randn_like(x_start))
-        # A random noise sample
+        # Generates random normal/Gaussian noise with the same dimensions as the given input
+        # TODO when the self.objective value dictates predicting noise,
+        #  it is learning to predict this noise value. Thus, we may need
+        #  to subtly swap out x_start for a target class image, so the noise
+        #  generated links back to the class
 
         x = self.q_sample(x_start=x_start, t=t, noise=noise)
+        # Warps the image by the noise we just generated
+        # in accordance to our beta scheduling choice and current timestep t
 
-        # If doing self-conditioning, 50% of the time, predict x_start from current set of times
-        # and condition unet with that
-        # this technique will slow down training by 25%, but seems to lower FID significantly
-
+        # If you are performing self-conditioning, then 50% of the training iterations
+        # will predict x_start from the current timestep, t. This will then be used to
+        # update U-Net's gradients with. This technique increases training time by 25%,
+        # but appears to significantly lower the FID score of the model
         x_self_cond = None  # TODO look into using this
         if self.self_condition and random() < 0.5:
             with torch.no_grad():
                 x_self_cond = self.model_predictions(x, t).pred_x_start
                 x_self_cond.detach_()
 
-        # Predict and take gradient step
-
-        model_out = self.model(x, t, x_self_cond)
+        # Next we predict the output according to our objective,
+        # then take a gradient step from that result
+        model_out = self.model(x, t, x_self_cond)  # The prediction of our model
 
         if self.objective == 'pred_noise':
+            # If we are trying to predict the noise that was just added
             target = noise
         elif self.objective == 'pred_x0':
+            # If we are trying to predict the original, true image, x_0
             target = x_start
             # TODO modify to substitute the target from x_start to a sample image
             #  from the target class. Also add a new objective type to support this.
+
+            # TODO we can likely achieve generation of different images
+            #  by manipulating x_start and setting the objective to pred_x0
         else:
             raise ValueError(f'unknown objective {self.objective}')
 
         loss = self.loss_fn(model_out, target, reduction='none')
+        # TODO substitute target for a relevant class image.
+        #  Need to pass in information on the EEG sample's class and a dataset to load corresponding class images
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, t, loss.shape)
         return loss.mean()
 
     def forward(self, img, *args, **kwargs):
+        """
+        When calling model(x), this is the method that is called.
+        This method takes an input image - x_0 - from the dataset and trains the diffusion & U-Net model on it.
+
+        :param img: The image to be used as x_0, which is the starting and ending
+        image for the noising and diffusion process, respectively.
+        """
         b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
         # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG. 
 
@@ -320,4 +348,4 @@ class GaussianDiffusion(nn.Module):
         t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
         img = normalise_to_negative_one_to_one(img)
-        return self.p_losses(img, t, *args, **kwargs)
+        return self.compute_loss_for_timestep(img, t, *args, **kwargs)

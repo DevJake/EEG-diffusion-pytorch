@@ -46,8 +46,9 @@ class Dataset(Dataset):
         self.image_size = image_size
         self.paths = [p for ext in exts for p in Path(f'{folder}').glob(f'**/*.{ext}')]
 
-        lambda_convert_function = partial(convert_image_to, convert_image_to) if exists(
-            convert_image_to) else nn.Identity()  # TODO determine what this does
+        lambda_convert_function = partial(convert_image_to, convert_image_to) \
+            if exists(convert_image_to) \
+            else nn.Identity()  # TODO determine what partial(...) does
         # nn.Identity simply returns the input.
         # So, if convert_image_to is None,
         # lambda_convert_function will just return whatever is input to it
@@ -130,12 +131,14 @@ class Trainer(object):
 
         # dataset and dataloader
 
-        self.ds = Dataset(training_images_dir, self.image_size, augment_horizontal_flip=augment_horizontal_flip,
-                          convert_image_to=convert_image_to_ext)
-        dl = DataLoader(self.ds, batch_size=train_batch_size, shuffle=True, pin_memory=True, num_workers=cpu_count())
+        self.train_images_dataset = Dataset(training_images_dir, self.image_size,
+                                            augment_horizontal_flip=augment_horizontal_flip,
+                                            convert_image_to=convert_image_to_ext)
+        dataloader = DataLoader(self.train_images_dataset, batch_size=train_batch_size, shuffle=True, pin_memory=True,
+                                num_workers=cpu_count())
 
-        dl = self.accelerator.prepare(dl)
-        self.dl = cycle(dl)
+        dataloader = self.accelerator.prepare(dataloader)
+        self.train_images_dataloader = cycle(dataloader)
 
         # optimizer
 
@@ -195,10 +198,11 @@ class Trainer(object):
                 total_loss = 0.
 
                 for _ in range(self.gradient_accumulate_every):
-                    data = next(self.dl).to(device)
+                    data = next(self.train_images_dataloader).to(device)
 
                     with self.accelerator.autocast():
                         loss = self.model(data)
+                        # TODO in goes our EEG data. Need to also pass in its class label (guitar/penguin/flower)
                         loss = loss / self.gradient_accumulate_every
                         total_loss += loss.item()
 
