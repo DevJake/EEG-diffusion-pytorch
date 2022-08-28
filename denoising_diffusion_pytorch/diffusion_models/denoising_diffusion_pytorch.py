@@ -3,6 +3,7 @@ from random import random
 
 import torch
 import torch.nn.functional as F
+import wandb
 from einops import reduce
 from torch import nn
 from tqdm.auto import tqdm
@@ -64,9 +65,9 @@ class GaussianDiffusion(nn.Module):
         assert sampling_timesteps is None or 0 < sampling_timesteps <= timesteps, \
             'The given sampling timesteps value is invalid!'
 
-        self.model = learning_model
-        self.channels = self.model.channels
-        self.self_condition = self.model.self_condition
+        self.learning_model = learning_model
+        self.channels = self.learning_model.channels
+        self.self_condition = self.learning_model.self_condition
         self.image_size = image_size
         self.objective = training_objective
 
@@ -145,7 +146,7 @@ class GaussianDiffusion(nn.Module):
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
     def model_predictions(self, x, t, x_self_cond=None):
-        model_output = self.model(x, t, x_self_cond)
+        model_output = self.learning_model(x, t, x_self_cond)
         predicted_noise, x_0 = None, None
 
         if self.objective == 'pred_noise':
@@ -350,7 +351,7 @@ class GaussianDiffusion(nn.Module):
 
         # Next we predict the output according to our objective,
         # then compute the gradient from that result
-        model_out = self.model(x, t, x_self_cond)  # The prediction of our model
+        model_out = self.learning_model(x, t, x_self_cond)  # The prediction of our model
 
         if self.objective == 'pred_noise':
             # If we are trying to predict the noise that was just added
@@ -373,6 +374,7 @@ class GaussianDiffusion(nn.Module):
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, t, loss.shape)
+        wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
         return loss.mean()
 
     def forward(self, img, *args, **kwargs):

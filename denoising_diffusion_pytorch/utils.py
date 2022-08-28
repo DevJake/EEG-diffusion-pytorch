@@ -4,6 +4,7 @@ from multiprocessing import cpu_count
 from pathlib import Path
 
 import torch
+import wandb
 from PIL import Image
 from accelerate import Accelerator
 from ema_pytorch import EMA
@@ -111,7 +112,10 @@ class Trainer(object):
             # TODO might be able to enable fp16 without affecting amp,
             #  allowing for the model to train on TPUs
             split_batches=True,
-            convert_image_to_ext=None  # A given extension to convert image types to
+            convert_image_to_ext=None,  # A given extension to convert image types to
+            use_wandb=True,
+            wandb_project_name='bath-thesis',
+            wandb_entity='jd202'
     ):
         super().__init__()
 
@@ -122,15 +126,13 @@ class Trainer(object):
 
         self.accelerator.native_amp = amp
 
-        self.model = diffusion_model
-
         assert has_int_square_root(num_samples), 'number of samples must have an integer square root'
+
+        self.diffusion_model = diffusion_model
         self.num_samples = num_samples
         self.save_and_sample_every = save_and_sample_every
-
         self.batch_size = train_batch_size
         self.gradient_accumulate_every = gradient_accumulate_every
-
         self.train_num_steps = train_num_steps
         self.image_size = diffusion_model.image_size
 
@@ -163,7 +165,32 @@ class Trainer(object):
 
         # prepare model, dataloader, optimizer with accelerator
 
-        self.model, self.optimiser = self.accelerator.prepare(self.model, self.optimiser)
+        self.diffusion_model, self.optimiser = self.accelerator.prepare(self.diffusion_model, self.optimiser)
+
+        wandb.init(project=wandb_project_name, entity=wandb_entity)
+
+        wandb.config = {
+            'learning_rate': train_lr,
+            'training_timesteps': self.train_num_steps,
+            'sampling_timesteps': self.diffusion_model.sampling_timesteps,
+            'diffusion_model': self.diffusion_model,
+            'training_model': self.diffusion_model.learning_model,
+            'image_size': self.image_size,
+            'number_of_samples': self.num_samples,
+            'batch_size': self.batch_size,
+            'use_amp': amp,
+            'use_fp16': fp16,
+            'gradient_accumulation_rate': gradient_accumulate_every,
+            'do_horizontal_flip': augment_horizontal_flip,
+            'ema_update_rate': ema_update_every,
+            'ema_decay': ema_decay,
+            'adam_betas': adam_betas,
+            'save_and_sample_rate': save_and_sample_every,
+            'do_split_batches': split_batches
+        }
+
+        wandb.watch(self.diffusion_model)
+        wandb.watch(self.diffusion_model.learning_model)
 
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
@@ -171,7 +198,7 @@ class Trainer(object):
 
         data = {
             'step': self.step,
-            'model': self.accelerator.get_state_dict(self.model),
+            'model': self.accelerator.get_state_dict(self.diffusion_model),
             'opt': self.optimiser.state_dict(),
             'ema': self.ema.state_dict(),
             'scaler': self.accelerator.scaler.state_dict() if exists(self.accelerator.scaler) else None
@@ -182,7 +209,7 @@ class Trainer(object):
     def load(self, milestone):
         data = torch.load(str(self.results_folder / f'model-{milestone}.pt'))
 
-        model = self.accelerator.unwrap_model(self.model)
+        model = self.accelerator.unwrap_model(self.diffusion_model)
         model.load_state_dict(data['model'])
 
         self.step = data['step']
@@ -206,13 +233,14 @@ class Trainer(object):
                     data = next(self.train_images_dataloader).to(device)
 
                     with self.accelerator.autocast():
-                        loss = self.model(data)
+                        loss = self.diffusion_model(data)
                         # TODO in goes our EEG data. Need to also pass in its class label (guitar/penguin/flower)
                         loss = loss / self.gradient_accumulate_every
                         total_loss += loss.item()
 
                     self.accelerator.backward(loss)
 
+                wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
                 pbar.set_description(f'loss: {total_loss:.4f}')
 
                 accelerator.wait_for_everyone()
@@ -302,7 +330,7 @@ def upsample(dim, dim_out=None):
 def downsample(input_channel_dims, output_channel_dims=None):
     """
     This method creates a downsampling convolutional layer of the U-Net architecture.
-    
+
     :param input_channel_dims: The channel dimensions for the input to the layer.
     :param output_channel_dims: The channel dimensions for the output of the layer.
     """
