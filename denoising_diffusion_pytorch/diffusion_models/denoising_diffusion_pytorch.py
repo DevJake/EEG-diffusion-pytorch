@@ -69,16 +69,14 @@ class GaussianDiffusion(nn.Module):
 
         # sampling related parameters
 
-        self.sampling_timesteps = default(sampling_timesteps,
-                                          timesteps)
-        # default num sampling timesteps to number of timesteps at training
+        self.sampling_timesteps = default(sampling_timesteps, timesteps)
+        # The default number of sampling timesteps. Reduced for Improved DDPM
 
         assert self.sampling_timesteps <= timesteps
         self.is_ddim_sampling = self.sampling_timesteps < timesteps
         self.ddim_sampling_eta = ddim_sampling_eta
 
-        # helper function to register buffer from float64 to float32
-
+        # Helper function to convert function values from float64 to float32
         register_buffer = lambda name, val: self.register_buffer(name, val.to(torch.float32))
 
         register_buffer('betas', betas)
@@ -101,14 +99,13 @@ class GaussianDiffusion(nn.Module):
 
         register_buffer('posterior_variance', posterior_variance)
 
-        # below: log calculation clipped because the posterior variance is 0 at the beginning of the diffusion chain
-
+        # Log when the variance is clipped, as the posterior variance is zero
+        # at the beginning of the diffusion chain (x_0 to x_T)
         register_buffer('posterior_log_variance_clipped', torch.log(posterior_variance.clamp(min=1e-20)))
         register_buffer('posterior_mean_coef1', betas * torch.sqrt(alphas_cumprod_prev) / (1. - alphas_cumprod))
         register_buffer('posterior_mean_coef2', (1. - alphas_cumprod_prev) * torch.sqrt(alphas) / (1. - alphas_cumprod))
 
-        # calculate p2 reweighting
-
+        # Calculate reweighting values for p2 loss
         register_buffer('p2_loss_weight',
                         (p2_loss_weight_k + alphas_cumprod / (1 - alphas_cumprod)) ** -p2_loss_weight_gamma)
 
@@ -119,6 +116,11 @@ class GaussianDiffusion(nn.Module):
         )
 
     def predict_noise_from_xt(self, x_t, t, x0):
+        """
+        This method attempts to predict the gaussian noise for the forwards process, from x_T to x_0.
+        :param x_t: The isotropic gaussian noise sample at the beginning of the forwards process.
+        :param t: The number of sampling timesteps.
+        """
         return ((extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape) * x_t - x0) /
                 extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape))
 
@@ -141,9 +143,7 @@ class GaussianDiffusion(nn.Module):
 
         elif self.objective == 'pred_x0':
             predicted_noise = self.predict_noise_from_xt(x, t, model_output)
-            x_0 = model_output
-
-            # TODO modify to support new objective type
+            x_0 = model_output  # The output of the model, x0
 
         return ModelPrediction(predicted_noise, x_0)
 
@@ -163,7 +163,8 @@ class GaussianDiffusion(nn.Module):
         batched_times = torch.full((x.shape[0],), t, device=x.device, dtype=torch.long)
         model_mean, _, model_log_variance, x_start = self.p_mean_variance(x=x, t=batched_times, x_self_cond=x_self_cond,
                                                                           clip_denoised=clip_denoised)
-        noise = torch.randn_like(x) if t > 0 else 0.  # no noise if t == 0
+        noise = torch.randn_like(x) if t > 0 else 0.
+        # Reset noise if t is zero, i.e., if we now have the output image of the model.
         pred_img = model_mean + (0.5 * model_log_variance).exp() * noise
         return pred_img, x_start
 
@@ -227,7 +228,7 @@ class GaussianDiffusion(nn.Module):
 
     @torch.no_grad()
     def sample(self, batch_size, device):
-        batch_size = 16 if batch_size is None else batch_size # default value
+        batch_size = 16 if batch_size is None else batch_size  # default value
         image_size, channels = self.image_size, self.channels
         sample_fn = self.p_sample_loop if not self.is_ddim_sampling else self.ddim_sample
         return sample_fn((batch_size, channels, image_size, image_size), device)
