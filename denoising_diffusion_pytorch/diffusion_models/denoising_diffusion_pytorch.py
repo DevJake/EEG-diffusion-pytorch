@@ -386,6 +386,8 @@ class GaussianDiffusion(nn.Module):
         :param img: The image to be used as x_0, which is the starting and ending
         image for the noising and diffusion process, respectively.
         """
+
+        print(img)
         b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
         # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG. 
 

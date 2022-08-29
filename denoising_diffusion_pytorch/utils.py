@@ -261,7 +261,7 @@ class Trainer(object):
             fp16=False,  # Use Floating-Point 16-bit precision
             # TODO might be able to enable fp16 without affecting amp,
             #  allowing for the model to train on TPUs
-            split_batches=True,
+            split_batches=False,
             convert_image_to_ext=None,  # A given extension to convert image types to
             use_wandb=True,
             wandb_project_name='bath-thesis',
@@ -318,8 +318,6 @@ class Trainer(object):
 
         # Step counter
         self.step = 0
-
-        # prepare model, dataloader, optimizer with accelerator
 
         self.diffusion_model, self.optimiser = self.accelerator.prepare(self.diffusion_model, self.optimiser)
 
