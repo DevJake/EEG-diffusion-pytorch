@@ -316,7 +316,7 @@ class GaussianDiffusion(nn.Module):
         else:
             raise ValueError(f'invalid loss type {self.loss_type}')
 
-    def compute_loss_for_timestep(self, x_start, t, noise=None):
+    def compute_loss_for_timestep(self, eeg_sample, target_sample, timestep, noise=None):
         """
         This method computes the losses for a full pass of a given image through the model.
         This effectively performs the full noising then denoising/diffusion process.
@@ -325,17 +325,18 @@ class GaussianDiffusion(nn.Module):
 
         :param x_start: The given image, x_0, to use for bother processes.
         :param noise: A sample of noise to be applied to the given x_start value.
+        :param timestep: The timestep to compute losses for. This can be updated linearly, or sampled randomly.
         """
         # b, c, h, w = x_start.shape # Commented out as these values are not used
 
-        noise = default(noise, lambda: torch.randn_like(x_start))
+        noise = default(noise, lambda: torch.randn_like(eeg_sample))
         # Generates random normal/Gaussian noise with the same dimensions as the given input
         # TODO when the self.objective value dictates predicting noise,
         #  it is learning to predict this noise value. Thus, we may need
         #  to subtly swap out x_start for a target class image, so the noise
         #  generated links back to the class
 
-        x = self.q_sample(x_start=x_start, t=t, noise=noise)
+        x = self.q_sample(x_start=eeg_sample, t=timestep, noise=noise)
         # Warps the image by the noise we just generated
         # in accordance to our beta scheduling choice and current timestep t
 
@@ -346,19 +347,22 @@ class GaussianDiffusion(nn.Module):
         x_self_cond = None  # TODO look into using this
         if self.self_condition and random() < 0.5:
             with torch.no_grad():
-                x_self_cond = self.model_predictions(x, t).pred_x_start
+                x_self_cond = self.model_predictions(x, timestep).pred_x_start
                 x_self_cond.detach_()
 
         # Next we predict the output according to our objective,
         # then compute the gradient from that result
-        model_out = self.learning_model(x, t, x_self_cond)  # The prediction of our model
+        model_out = self.learning_model(x, timestep, x_self_cond)  # The prediction of our model
 
         if self.objective == 'pred_noise':
             # If we are trying to predict the noise that was just added
-            target = noise
+
+            # target = noise
+            target = torch.randn_like(target_sample)
         elif self.objective == 'pred_x0':
             # If we are trying to predict the original, true image, x_0
-            target = x_start
+            # target = x_start
+            target = target_sample
             # TODO modify to substitute the target from x_start to a sample image
             #  from the target class. Also add a new objective type to support this.
 
@@ -373,7 +377,7 @@ class GaussianDiffusion(nn.Module):
         #  class and a dataset to load corresponding class images
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
-        loss = loss * extract(self.p2_loss_weight, t, loss.shape)
+        loss = loss * extract(self.p2_loss_weight, timestep, loss.shape)
         wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
         # TODO log per-class loss, maybe Inception Score and/or FID.
         return loss.mean()
@@ -387,12 +391,19 @@ class GaussianDiffusion(nn.Module):
         image for the noising and diffusion process, respectively.
         """
 
-        print(img)
-        b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
-        # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG. 
+        # b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
+        # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG.
+        eeg_sample, target_sample = img
+        print(eeg_sample.shape, target_sample.shape)
+
+        b, c, h, w, device, img_size = *eeg_sample.shape, eeg_sample.device, self.image_size
+        # eeg_sample = (b.1.32.32), target_sample=(b.3.32.32)
+        # Might need to reshape eeg_sample to be 3-channels wide by coping it twice
 
         assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
-        t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
+        timestep = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
-        img = normalise_to_negative_one_to_one(img)
-        return self.compute_loss_for_timestep(img, t, *args, **kwargs)
+        # img = normalise_to_negative_one_to_one(img)
+        eeg_sample = normalise_to_negative_one_to_one(eeg_sample)
+        target_sample = normalise_to_negative_one_to_one(target_sample)
+        return self.compute_loss_for_timestep(eeg_sample, target_sample, timestep, *args, **kwargs)

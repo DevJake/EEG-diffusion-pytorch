@@ -4,7 +4,6 @@ import random
 import shutil
 from collections import defaultdict
 from functools import partial
-from multiprocessing import cpu_count
 from pathlib import Path
 
 import torch
@@ -114,7 +113,8 @@ class EEGTargetsDataset(Dataset):
                  shuffle_targets=True,
                  file_types=None,
                  unsorted_eeg_policy=None,
-                 unsorted_target_policy=None):
+                 unsorted_target_policy=None,
+                 image_size=[32, 32]):
         """
         This class loads a dataset of EEG and target image pairs, and then determines the correct class label for each one.
 
@@ -164,7 +164,7 @@ class EEGTargetsDataset(Dataset):
         self.shuffle_targets = shuffle_targets
         self.data = defaultdict(lambda: defaultdict(list))
         self.indices = {'eeg': {}, 'target': {}}
-        self.image_size = 64
+        self.image_size = image_size
 
         # TODO load eeg recursively, load targets recursively, generate labels for each, group them together
 
@@ -210,12 +210,18 @@ class EEGTargetsDataset(Dataset):
         ])
 
         self.transformEEG = T.Compose([
+            T.Resize(self.image_size),
             T.ToTensor()
         ])
 
     def __getitem__(self, index):
         """
-        Retrieve an item in the dataset at the given index
+        Retrieve an item in the dataset at the given index. If shuffling is enabled, the given index is ignored.
+
+        The values returned are in a tuple, and in the order of:
+        1. EEG image for label `L`.
+        2. Target image for label `L`.
+        3. Label `L`.
         """
         label = random.choice(self.labels)
         eeg_sample = random.choice(self.data['eeg'][label])
@@ -224,8 +230,6 @@ class EEGTargetsDataset(Dataset):
 
         eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
         target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}')
-
-        self.image_size = eeg_sample.width
 
         return self.transformEEG(eeg_sample), self.transformTarget(target_sample), label
 
@@ -294,15 +298,24 @@ class Trainer(object):
 
         # dataset and dataloader
 
-        self.train_images_dataset = GenericDataset(training_images_dir, self.image_size,
-                                                   augment_horizontal_flip=augment_horizontal_flip,
-                                                   convert_image_to=convert_image_to_ext)
-        dataloader = DataLoader(self.train_images_dataset, batch_size=train_batch_size, shuffle=True, pin_memory=True,
-                                num_workers=cpu_count())
-        # num_workers=0)
+        # self.train_images_dataset = GenericDataset(training_images_dir, self.image_size,
+        #                                            augment_horizontal_flip=augment_horizontal_flip,
+        #                                            convert_image_to=convert_image_to_ext)
+        # dataloader = DataLoader(self.train_images_dataset, batch_size=train_batch_size, shuffle=True, pin_memory=True,
+        #                         num_workers=cpu_count())
 
+        self.train_images_dataset = EEGTargetsDataset()
+        dataloader = DataLoader(self.train_images_dataset,
+                                batch_size=train_batch_size,
+                                shuffle=True,
+                                pin_memory=True,
+                                # num_workers=cpu_count())
+                                num_workers=0)  # TODO remove
+
+        # dataloader = self.accelerator.prepare(dataloader)
+        # self.train_images_dataloader = cycle(dataloader)
         dataloader = self.accelerator.prepare(dataloader)
-        self.train_images_dataloader = cycle(dataloader)
+        self.train_eeg_targets_dataloader = cycle(dataloader)
 
         # optimizer
 
@@ -386,7 +399,13 @@ class Trainer(object):
                 total_loss = 0.
 
                 for _ in range(self.gradient_accumulate_every):
-                    data = next(self.train_images_dataloader).to(device)
+                    # data = next(self.train_images_dataloader).to(device)
+                    eeg_sample, target_sample, _ = next(self.train_eeg_targets_dataloader)
+                    eeg_sample.to(device)
+                    target_sample.to(device)
+                    data = (eeg_sample, target_sample)
+                    # eeg_sample, target_sample, label
+                    #
                     # TODO either images are not being loaded, or it isn't getting put onto the device correctly
 
                     with self.accelerator.autocast():
