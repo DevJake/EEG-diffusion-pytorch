@@ -363,18 +363,14 @@ class GaussianDiffusion(nn.Module):
             # If we are trying to predict the original, true image, x_0
             # target = x_start
             target = target_sample
-            # TODO modify to substitute the target from x_start to a sample image
-            #  from the target class. Also add a new objective type to support this.
-
-            # TODO we can likely achieve generation of different images
-            #  by manipulating x_start and setting the objective to pred_x0
         else:
             raise ValueError(f'unknown objective {self.objective}')
 
         loss = self.loss_fn(model_out, target, reduction='none')
-        # TODO substitute target for a relevant class image.
-        #  Need to pass in information on the EEG sample's
-        #  class and a dataset to load corresponding class images
+        # TODO model_out is 32x1x32x32, target is 32x3x32x32. Mismatch does not cause a crash, but...
+        #  UserWarning: Using a target size (torch.Size([32, 3, 32, 32])) that is different to
+        #  the input size (torch.Size([32, 1, 32, 32])). This will likely lead to incorrect results
+        #  due to broadcasting. Please ensure they have the same size.
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, timestep, loss.shape)
