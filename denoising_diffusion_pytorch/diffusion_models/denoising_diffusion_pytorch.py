@@ -71,12 +71,12 @@ class GaussianDiffusion(nn.Module):
         self.image_size = image_size
         self.objective = training_objective
 
-        betas = linear_beta_schedule(timesteps) if beta_schedule is 'linear' else cosine_beta_schedule(timesteps)
+        betas = linear_beta_schedule(timesteps) if beta_schedule == 'linear' else cosine_beta_schedule(timesteps)
         alphas = 1. - betas
         alphas_cumprod = torch.cumprod(alphas, axis=0)
         alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.)
 
-        timesteps = betas.shape
+        timesteps, = betas.shape
         self.num_timesteps = int(timesteps)
         self.loss_type = loss_type
 
@@ -308,9 +308,9 @@ class GaussianDiffusion(nn.Module):
         Given that this method returns a function, then any parameters supplied are
         naturally passed into that function, thus deriving the loss value.
         """
-        if self.loss_type.lower() is 'l1':
+        if self.loss_type == 'l1':
             return F.l1_loss
-        elif self.loss_type.lower() is 'l2':
+        elif self.loss_type == 'l2':
             return F.mse_loss
         # TODO explore alternative loss types, unlikely they will be of value however
         else:
@@ -375,6 +375,7 @@ class GaussianDiffusion(nn.Module):
 
         loss = loss * extract(self.p2_loss_weight, t, loss.shape)
         wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
+        # TODO log per-class loss, maybe Inception Score and/or FID.
         return loss.mean()
 
     def forward(self, img, *args, **kwargs):
