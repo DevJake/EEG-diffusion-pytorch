@@ -394,7 +394,6 @@ class GaussianDiffusion(nn.Module):
         # b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
         # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG.
         eeg_sample, target_sample = img
-        print(eeg_sample.shape, target_sample.shape)
 
         b, c, h, w, device, img_size = *eeg_sample.shape, eeg_sample.device, self.image_size
         # eeg_sample = (b.1.32.32), target_sample=(b.3.32.32)
