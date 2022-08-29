@@ -1,4 +1,8 @@
 import math
+import os
+import random
+import shutil
+from collections import defaultdict
 from functools import partial
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -25,7 +29,7 @@ def exists(x):
     return x is not None
 
 
-class Dataset(Dataset):
+class GenericDataset(Dataset):
     def __init__(
             self,
             folder,  # TODO load images recursively.
@@ -39,7 +43,7 @@ class Dataset(Dataset):
 
         :param folder: The folder that contains the files for this dataset.
         :param int image_size: The dimensions for the given image. All images will be converted to a square with these dimensions.
-        :param list exts: A list of extensions that this class should load.
+        :param list exts: A list of file extensions that this class should load, such as jpg and png.
         :param augment_horizontal_flip: If a horizontal (left-to-right) flip of the image should be performed.
         :param convert_image_to: A given lambda function specifying how to convert the input images
         for this dataset. This is applied before any other manipulations, such as resizing or
@@ -56,7 +60,7 @@ class Dataset(Dataset):
             if exists(convert_image_to) \
             else nn.Identity()  # TODO determine what partial(...) does
         # nn.Identity simply returns the input.
-        # So, if convert_image_to is None,
+        # So, if convert_image_to_fn is None,
         # lambda_convert_function will just return whatever is input to it
 
         self.transform = T.Compose([
@@ -70,7 +74,7 @@ class Dataset(Dataset):
 
     def __len__(self):
         """
-        Return the number of images to be loaded for this dataset.
+        Return the number of images in this dataset.
         """
         return len(self.paths)
 
@@ -99,8 +103,8 @@ class Trainer(object):
             train_batch_size=16,
             gradient_accumulate_every=1,
             augment_horizontal_flip=True,  # Flip image from left-to-right
-            train_lr=1e-4,
-            train_num_steps=100000,
+            training_learning_rate=1e-4,
+            num_training_steps=100000,
             ema_update_every=10,
             ema_decay=0.995,
             adam_betas=(0.9, 0.99),
@@ -117,6 +121,12 @@ class Trainer(object):
             wandb_project_name='bath-thesis',
             wandb_entity='jd202'
     ):
+        """
+        :param split_batches: If the batch of images loaded should be split by
+        accelerator across all devices, or treated as a per-device batch count.
+        For example, with a batch size of 32 and 8 devices, split_batches=True
+        would put 4 items on each device.
+        """
         super().__init__()
 
         self.accelerator = Accelerator(
@@ -133,23 +143,24 @@ class Trainer(object):
         self.save_and_sample_every = save_and_sample_every
         self.batch_size = train_batch_size
         self.gradient_accumulate_every = gradient_accumulate_every
-        self.train_num_steps = train_num_steps
+        self.train_num_steps = num_training_steps
         self.image_size = diffusion_model.image_size
 
         # dataset and dataloader
 
-        self.train_images_dataset = Dataset(training_images_dir, self.image_size,
-                                            augment_horizontal_flip=augment_horizontal_flip,
-                                            convert_image_to=convert_image_to_ext)
+        self.train_images_dataset = GenericDataset(training_images_dir, self.image_size,
+                                                   augment_horizontal_flip=augment_horizontal_flip,
+                                                   convert_image_to=convert_image_to_ext)
         dataloader = DataLoader(self.train_images_dataset, batch_size=train_batch_size, shuffle=True, pin_memory=True,
                                 num_workers=cpu_count())
+        # num_workers=0)
 
         dataloader = self.accelerator.prepare(dataloader)
         self.train_images_dataloader = cycle(dataloader)
 
         # optimizer
 
-        self.optimiser = Adam(diffusion_model.parameters(), lr=train_lr, betas=adam_betas)
+        self.optimiser = Adam(diffusion_model.parameters(), lr=training_learning_rate, betas=adam_betas)
 
         # for logging results in a folder periodically
 
@@ -159,20 +170,18 @@ class Trainer(object):
             self.results_folder = Path(results_folder)
             self.results_folder.mkdir(exist_ok=True)
 
-            wandb.watch(self.ema.ema_model)
-
-        # step counter state
-
+        # Step counter
         self.step = 0
 
         # prepare model, dataloader, optimizer with accelerator
 
         self.diffusion_model, self.optimiser = self.accelerator.prepare(self.diffusion_model, self.optimiser)
 
+        # wandb.login(key=os.environ['WANDB_API_KEY']) # Uncomment if `wandb login` does not work in the console
         wandb.init(project=wandb_project_name, entity=wandb_entity)
 
         wandb.config = {
-            'learning_rate': train_lr,
+            'learning_rate': training_learning_rate,
             'training_timesteps': self.train_num_steps,
             'sampling_timesteps': self.diffusion_model.sampling_timesteps,
             'diffusion_model': self.diffusion_model,
@@ -193,6 +202,7 @@ class Trainer(object):
 
         wandb.watch(self.diffusion_model)
         wandb.watch(self.diffusion_model.learning_model)
+        wandb.watch(self.ema.ema_model)
 
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
@@ -233,6 +243,7 @@ class Trainer(object):
 
                 for _ in range(self.gradient_accumulate_every):
                     data = next(self.train_images_dataloader).to(device)
+                    # TODO either images are not being loaded, or it isn't getting put onto the device correctly
 
                     with self.accelerator.autocast():
                         loss = self.diffusion_model(data)
@@ -264,9 +275,7 @@ class Trainer(object):
                             batches = num_to_groups(self.num_samples, self.batch_size)
                             all_images_list = list(
                                 map(lambda n: self.ema.ema_model.sample(batch_size=n, device=device), batches))
-                            # TODO update the above to support passing of the device
-                            #  for the classes ContinuousTimeDiff. and ElucidatedDiff.
-                            #  Also check other classes for potential uses/conflicts.
+                            # TODO verify that the device is successfully passed to all required models.
 
                         all_images = torch.cat(all_images_list, dim=0)
                         utils.save_image(all_images, str(self.results_folder / f'sample-{milestone}.png'),
@@ -281,9 +290,9 @@ class Trainer(object):
         accelerator.print('Training complete!')
 
 
-def cycle(dl):
+def cycle(dataloader):
     while True:
-        for data in dl:
+        for data in dataloader:
             yield data
 
 
@@ -300,7 +309,7 @@ def num_to_groups(num, divisor):
     return arr
 
 
-def convert_image_to(img_type, image):
+def convert_image_to_fn(img_type, image):
     if image.mode != img_type:
         return image.convert(img_type)
     return image
