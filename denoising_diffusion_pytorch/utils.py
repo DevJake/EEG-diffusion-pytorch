@@ -87,6 +87,152 @@ class GenericDataset(Dataset):
         return self.transform(img)
 
 
+def find_and_move_unsorted(src_dir, ftype: str):
+    for path in Path(f'{src_dir}/unsorted').rglob(f'*.{ftype}'):
+        # print(path)
+        name = str(path).lower().split('/')[-1]
+        p = None
+        p = 'penguin' if 'penguin' in name else p
+        p = 'guitar' if 'guitar' in name else p
+        p = 'flower' if 'flower' in name else p
+
+        assert p is not None, f'Could not sort file at path: {path}'
+        print('Moving', name, 'to', src_dir, p)
+        os.makedirs(f'{src_dir}/{p}', exist_ok=True)
+        os.rename(path, f'{src_dir}/{p}/{name}')
+
+    shutil.rmtree(f'{src_dir}/unsorted')
+    os.mkdir(f'{src_dir}/unsorted')
+
+
+class EEGTargetsDataset(Dataset):
+    def __init__(self,
+                 eeg_directory='./datasets/eeg',
+                 targets_directory='./datasets/targets',
+                 labels: list = None,
+                 shuffle_eeg=True,
+                 shuffle_targets=True,
+                 file_types=None,
+                 unsorted_eeg_policy=None,
+                 unsorted_target_policy=None):
+        """
+        This class loads a dataset of EEG and target image pairs, and then determines the correct class label for each one.
+
+        A typical directory structure is as follows:
+        datasets/
+        ├── eeg
+        │   ├── flower
+        │   ├── guitar
+        │   ├── penguin
+        │   └── unsorted
+        └── target
+            ├── flower
+            ├── guitar
+            └── penguin
+            └── unsorted
+
+        It is expected that the directories at the bottom layer are named after the label they contain.
+        It is expected that the names match between the `eeg` and `targets` directory.
+
+        Any files and directories in the 'unsorted' directory will be searched recursively
+        and moved to the appropriate directory. Their appropriate directory will be inferred
+        by the file's name.
+
+
+        :param eeg_directory: The directory containing EEG images for training. These will be loaded recursively.
+        :param targets_directory: The directory containing target images for training. These will be loaded recursively.
+        :param labels: The list of labels to be used for training. If left blank, this defaults to guitar, penguin and flower.
+        :param shuffle_eeg: If the EEG training images should be sampled from randomly.
+        :param shuffle_targets: If the target training images for each respective EEG image should be sampled from randomly.
+        :param file_types: The list of file types to load.
+        """
+        if unsorted_target_policy is None:
+            unsorted_target_policy = ['move', 'delete-src-dirs']
+        if unsorted_eeg_policy is None:
+            unsorted_eeg_policy = ['move', 'delete-src-dirs']
+        if labels is None:
+            labels = ['penguin', 'guitar', 'flower']
+
+        if file_types is None:
+            file_types = ['jpg', 'png']
+
+        self.file_types = file_types
+        self.labels = labels
+        self.eeg_directory = eeg_directory
+        self.targets_directory = targets_directory
+        self.shuffle_eeg = shuffle_eeg
+        self.shuffle_targets = shuffle_targets
+        self.data = defaultdict(lambda: defaultdict(list))
+        self.indices = {'eeg': {}, 'target': {}}
+        self.image_size = 64
+
+        # TODO load eeg recursively, load targets recursively, generate labels for each, group them together
+
+        for label in labels:
+            assert os.path.exists(f'{eeg_directory}/{label}'), \
+                f'The EEG directory for `{label}` does not exist.'
+            assert os.path.exists(f'{targets_directory}/{label}'), \
+                f'The targets directory for `{label}` does not exist.'
+
+        for ftype in file_types:
+            find_and_move_unsorted(eeg_directory, ftype)
+            find_and_move_unsorted(targets_directory, ftype)
+
+        for label in labels:
+            d0 = os.listdir(f'{eeg_directory}/{label}')
+            d1 = os.listdir(f'{targets_directory}/{label}')
+
+            d0 = [d for d in d0 if not d.startswith('.')]
+            d1 = [d for d in d1 if not d.startswith('.')]
+
+            if self.shuffle_eeg:
+                random.shuffle(d0)
+
+            if self.shuffle_targets:
+                random.shuffle(d1)
+
+            self.data['eeg'][label] = d0
+            self.data['targets'][label] = d1
+
+            print(f'Loaded {len(d0)} images for EEG/{label}')
+            print(f'Loaded {len(d1)} images for Targets/{label}')
+
+            # self.indices['eeg'][label] = 0
+            # self.indices['target'][label] = 0
+
+            # TODO verify at least one file for each class
+            # TODO apply augmentations - such as horizontal flipping - to the target images
+
+        self.transformTarget = T.Compose([
+            T.RandomHorizontalFlip(),
+            T.Resize(self.image_size),
+            T.ToTensor()
+        ])
+
+        self.transformEEG = T.Compose([
+            T.ToTensor()
+        ])
+
+    def __getitem__(self, index):
+        """
+        Retrieve an item in the dataset at the given index
+        """
+        label = random.choice(self.labels)
+        eeg_sample = random.choice(self.data['eeg'][label])
+        target_sample = random.choice(self.data['targets'][label])
+        # TODO do not return names, read in the images instead
+
+        eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
+        target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}')
+
+        self.image_size = eeg_sample.width
+
+        return self.transformEEG(eeg_sample), self.transformTarget(target_sample), label
+
+    def __len__(self):
+        return sum(len(d[label]) for label in self.labels for d in self.data.values())
+
+
 class Trainer(object):
     """
     This class is responsible for the training, sampling and saving loops that
