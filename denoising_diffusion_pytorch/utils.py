@@ -231,6 +231,12 @@ class EEGTargetsDataset(Dataset):
         eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
         target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}')
 
+        if target_sample.mode in ('RGBA', 'LA') or (target_sample.mode == 'P' and 'transparency' in target_sample.info):
+            alpha = target_sample.convert('RGBA').split()[-1]
+            bg = Image.new("RGBA", target_sample.size, (255, 255, 255) + (255,))
+            bg.paste(target_sample, mask=alpha)
+            target_sample = bg
+
         return self.transformEEG(eeg_sample), self.transformTarget(target_sample), label
 
     def __len__(self):
