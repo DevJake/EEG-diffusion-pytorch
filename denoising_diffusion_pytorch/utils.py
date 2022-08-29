@@ -237,6 +237,8 @@ class EEGTargetsDataset(Dataset):
             bg.paste(target_sample, mask=alpha)
             target_sample = bg
 
+        # TODO check if target_sample is greyscale and remove it
+
         return self.transformEEG(eeg_sample), self.transformTarget(target_sample), label
 
     def __len__(self):
