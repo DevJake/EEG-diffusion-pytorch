@@ -22,7 +22,8 @@ trainer = Trainer(
     num_training_steps=200000,  # total training steps
     gradient_accumulate_every=2,  # gradient accumulation steps
     ema_decay=0.995,  # exponential moving average decay
-    amp=False  # turn on mixed precision
+    amp=False,  # turn on mixed precision
+    save_and_sample_every=100
 )
 
 if __name__ == '__main__':
