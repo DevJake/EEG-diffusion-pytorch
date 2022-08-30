@@ -4,6 +4,7 @@ from random import random
 import torch
 import torch.nn.functional as F
 # import wandb
+import wandb
 from einops import reduce
 from torch import nn
 from tqdm.auto import tqdm
@@ -363,7 +364,7 @@ class GaussianDiffusion(nn.Module):
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, timestep, loss.shape)
-        # wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
+        wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
         # TODO maybe log Inception Score and/or FID.
         return loss.mean()
 
