@@ -35,7 +35,4 @@ wandb.watch(model)
 wandb.watch(diffusion)
 
 
-def main():
-    # torch.multiprocessing.freeze_support()
-    # freeze_support()
-    trainer.train()
+trainer.train()

@@ -242,7 +242,7 @@ class EEGTargetsDataset(Dataset):
 
         eeg_sample = self.transformEEG(eeg_sample)
         eeg_sample = eeg_sample.repeat(3, 1, 1)
-
+	print('Loaded eeg and target samples')
         return eeg_sample, self.transformTarget(target_sample), label
 
     def __len__(self):
@@ -277,7 +277,7 @@ class Trainer(object):
             fp16=False,  # Use Floating-Point 16-bit precision
             # TODO might be able to enable fp16 without affecting amp,
             #  allowing for the model to train on TPUs
-            split_batches=False,
+            split_batches=True,
             convert_image_to_ext=None,  # A given extension to convert image types to
             use_wandb=True
     ):
@@ -319,8 +319,8 @@ class Trainer(object):
                                 batch_size=train_batch_size,
                                 shuffle=True,
                                 pin_memory=True,
-                                # num_workers=cpu_count())
-                                num_workers=0)  # TODO remove
+                                num_workers=cpu_count())
+                                #num_workers=0)  # TODO remove
 
         # dataloader = self.accelerator.prepare(dataloader)
         # self.train_images_dataloader = cycle(dataloader)
@@ -407,10 +407,12 @@ class Trainer(object):
 
                 for _ in range(self.gradient_accumulate_every):
                     # data = next(self.train_images_dataloader).to(device)
-                    eeg_sample, target_sample, _ = next(self.train_eeg_targets_dataloader)
+                    print('Attempting to load new eeg and target samples')
+		    eeg_sample, target_sample, _ = next(self.train_eeg_targets_dataloader)
                     eeg_sample.to(device)
                     target_sample.to(device)
                     data = (eeg_sample, target_sample)
+		    print('Successfully loaded...')
                     # eeg_sample, target_sample, label
                     #
                     # TODO either images are not being loaded, or it isn't getting put onto the device correctly
@@ -422,6 +424,7 @@ class Trainer(object):
                         total_loss += loss.item()
 
                     self.accelerator.backward(loss)
+		    print('Performed backprop!')
 
                 wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
                 pbar.set_description(f'loss: {total_loss:.4f}')
