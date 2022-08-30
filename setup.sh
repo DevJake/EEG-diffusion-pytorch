@@ -4,7 +4,7 @@ git clone https://github.com/DevJake/EEG-diffusion-pytorch.git diffusion
 cd diffusion
 #virtualenv venv
 #source venv/bin/activate
-python3 setup.py install
+sudo python3 setup.py install
 pip3 install wandb accelerate einops tqdm ema_pytorch torchvision
 #pip3 install -r requirements.txt
 #python3 -m wandb login
@@ -17,7 +17,7 @@ mkdir -p datasets/eeg/unsorted datasets/eeg/flower datasets/eeg/penguin datasets
 mkdir -p datasets/targets/unsorted datasets/targets/flower datasets/targets/penguin datasets/targets/guitar
 cd datasets/eeg/unsorted
 rclone copy gc:/bath-thesis-data/data/outputs/preprocessing . -P
-find . -name "*.tar.gz" -exec tar -xvf {} \;
+find . -name "*.tar.gz" -exec tar -xf {} \; # this will take some time to run...
 cd ~/diffusion/datasets/targets/
 rclone copy gc:/bath-thesis-data/data/classes/32x32.tar . -P
 tar -xf 32x32.tar

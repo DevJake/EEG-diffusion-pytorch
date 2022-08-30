@@ -88,6 +88,8 @@ class GenericDataset(Dataset):
 
 
 def find_and_move_unsorted(src_dir, ftype: str):
+    if len(os.listdir(f'{src_dir}/unsorted')) <= 0:
+        pass
     for path in Path(f'{src_dir}/unsorted').rglob(f'*.{ftype}'):
         # print(path)
         name = str(path).lower().split('/')[-1]
@@ -178,9 +180,9 @@ class EEGTargetsDataset(Dataset):
             assert os.path.exists(f'{targets_directory}/{label}'), \
                 f'The targets directory for `{label}` does not exist.'
 
-        # for ftype in file_types:
-        #     find_and_move_unsorted(eeg_directory, ftype)
-        #     find_and_move_unsorted(targets_directory, ftype)
+        for ftype in file_types:
+            find_and_move_unsorted(eeg_directory, ftype)
+            find_and_move_unsorted(targets_directory, ftype)
 
         for label in labels:
             d0 = os.listdir(f'{eeg_directory}/{label}')
