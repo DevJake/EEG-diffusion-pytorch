@@ -415,14 +415,15 @@ class Trainer(object):
                     print('Successfully loaded...')
                     # eeg_sample, target_sample, label
 
-                    # with self.accelerator.autocast():
-                    loss = self.diffusion_model(data)
-                    print('Got loss, now dividing by gradient accumulation rate')
-                    loss = loss / self.gradient_accumulate_every
-                    total_loss += loss.item()
-                    print('loss=', loss, ' total loss=', total_loss)
+                    with accelerator.autocast():
+                        loss = self.diffusion_model(data)
+                        print('Got loss, now dividing by gradient accumulation rate')
+                        loss = loss / self.gradient_accumulate_every
+                        total_loss += loss.item()
+                        print('loss=', loss, ' total loss=', total_loss)
+
                     print('Performing backprop')
-                    self.accelerator.backward(loss)
+                    accelerator.backward(loss)
                     print('Performed backprop!')
 
                 wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
