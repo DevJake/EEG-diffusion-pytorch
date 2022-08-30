@@ -290,7 +290,6 @@ class Trainer(object):
         super().__init__()
 
         self.accelerator = Accelerator(
-            log_with='wandb',
             split_batches=split_batches,
             mixed_precision='fp16' if fp16 else 'no'
         )
@@ -424,7 +423,7 @@ class Trainer(object):
 
                     self.accelerator.backward(loss)
 
-                # wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
+                wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
                 pbar.set_description(f'loss: {total_loss:.4f}')
 
                 accelerator.wait_for_everyone()
