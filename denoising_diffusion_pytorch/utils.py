@@ -228,7 +228,7 @@ class EEGTargetsDataset(Dataset):
         target_sample = random.choice(self.data['targets'][label])
         # TODO do not return names, read in the images instead
 
-        eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}').convert('RGB')
+        eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
         target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}').convert('RGB')
 
         if target_sample.mode in ('RGBA', 'LA') or (target_sample.mode == 'P' and 'transparency' in target_sample.info):
@@ -237,9 +237,10 @@ class EEGTargetsDataset(Dataset):
             bg.paste(target_sample, mask=alpha)
             target_sample = bg
 
-        # TODO check if target_sample is greyscale and remove it
+        eeg_sample = self.transformEEG(eeg_sample)
+        eeg_sample = torch.cat(eeg_sample.clone(), eeg_sample.clone())
 
-        return self.transformEEG(eeg_sample), self.transformTarget(target_sample), label
+        return eeg_sample, self.transformTarget(target_sample), label
 
     def __len__(self):
         return sum(len(d[label]) for label in self.labels for d in self.data.values())
