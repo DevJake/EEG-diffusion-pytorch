@@ -287,7 +287,8 @@ class Trainer(object):
         self.accelerator = Accelerator(
             split_batches=split_batches,
             mixed_precision='fp16' if fp16 else 'no',
-            gradient_accumulation_steps=gradient_accumulate_every
+            gradient_accumulation_steps=gradient_accumulate_every,
+            device_placement=True
         )
 
         self.accelerator.native_amp = amp
@@ -331,7 +332,7 @@ class Trainer(object):
         self.step = 0
 
         self.diffusion_model, self.optimiser = self.accelerator.prepare(self.diffusion_model, self.optimiser)
-
+        self.diffusion_model.learning_model = self.accelerator.prepare(self.diffusion_model.learning_model)
         # wandb.login(key=os.environ['WANDB_API_KEY']) # Uncomment if `wandb login` does not work in the console
         # if self.accelerator.is_main_process:
 
@@ -433,7 +434,6 @@ class Trainer(object):
                             batches = num_to_groups(self.num_samples, self.batch_size)
                             all_images_list = list(
                                 map(lambda n: self.ema.ema_model.sample(batch_size=n, device=device), batches))
-                            # TODO verify that the device is successfully passed to all required models.
 
                         all_images = torch.cat(all_images_list, dim=0)
                         utils.save_image(all_images, str(self.results_folder / f'sample-{milestone}.png'),
