@@ -32,7 +32,7 @@ def exists(x):
 class GenericDataset(Dataset):
     def __init__(
             self,
-            folder,  # TODO load images recursively.
+            folder,
             image_size: int,
             exts: list = None,
             augment_horizontal_flip=False,
@@ -203,12 +203,6 @@ class EEGTargetsDataset(Dataset):
             # print(f'Loaded {len(d0)} images for EEG/{label}')
             # print(f'Loaded {len(d1)} images for Targets/{label}')
 
-            # self.indices['eeg'][label] = 0
-            # self.indices['target'][label] = 0
-
-            # TODO verify at least one file for each class
-            # TODO apply augmentations - such as horizontal flipping - to the target images
-
         self.transformTarget = T.Compose([
             T.RandomHorizontalFlip(),
             T.Resize(self.image_size),
@@ -232,7 +226,6 @@ class EEGTargetsDataset(Dataset):
         label = random.choice(self.labels)
         eeg_sample = random.choice(self.data['eeg'][label])
         target_sample = random.choice(self.data['targets'][label])
-        # TODO do not return names, read in the images instead
 
         eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
         target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}').convert('RGB')
@@ -410,7 +403,8 @@ class Trainer(object):
                     with self.accelerator.autocast():
                         loss = self.diffusion_model(data)
                         loss = loss / self.gradient_accumulate_every
-                        total_loss += loss.item()
+                        # total_loss += loss.item()
+                        # total_loss += loss
                         print('loss=', loss, ' total loss=', total_loss)
 
                     print('Performing backprop')

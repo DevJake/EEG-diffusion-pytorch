@@ -28,7 +28,7 @@ class GaussianDiffusion(nn.Module):
             timesteps=1000,
             sampling_timesteps=None,
             loss_type='l1',
-            training_objective='pred_noise',  # TODO add new objective
+            training_objective='pred_noise',
             beta_schedule='cosine',
             p2_loss_weight_gamma=0.,
             # p2 loss weight, from https://arxiv.org/abs/2204.00227 - 0 is equivalent to weight of 1 across time - 1.
@@ -212,7 +212,6 @@ class GaussianDiffusion(nn.Module):
             img, x_start = self.compute_sample_for_timestep(img, t, self_cond)
 
         img = unnormalise_to_zero_to_one(img)
-        # TODO unclear what this does
         return img
 
     @torch.no_grad()
@@ -311,7 +310,6 @@ class GaussianDiffusion(nn.Module):
             return F.l1_loss
         elif self.loss_type == 'l2':
             return F.mse_loss
-        # TODO explore alternative loss types, unlikely they will be of value however
         else:
             raise ValueError(f'invalid loss type {self.loss_type}')
 
@@ -329,10 +327,6 @@ class GaussianDiffusion(nn.Module):
         # b, c, h, w = x_start.shape # Commented out as these values are not used
         noise = default(noise, lambda: torch.randn_like(eeg_sample))
         # Generates random normal/Gaussian noise with the same dimensions as the given input
-        # TODO when the self.objective value dictates predicting noise,
-        #  it is learning to predict this noise value. Thus, we may need
-        #  to subtly swap out x_start for a target class image, so the noise
-        #  generated links back to the class
 
         x = self.q_sample(x_start=eeg_sample, t=timestep, noise=noise)
         # Warps the image by the noise we just generated
@@ -370,7 +364,7 @@ class GaussianDiffusion(nn.Module):
 
         loss = loss * extract(self.p2_loss_weight, timestep, loss.shape)
         # wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
-        # TODO log per-class loss, maybe Inception Score and/or FID.
+        # TODO maybe log Inception Score and/or FID.
         return loss.mean()
 
     def forward(self, img, *args, **kwargs):
@@ -383,17 +377,13 @@ class GaussianDiffusion(nn.Module):
         """
 
         # b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
-        # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG.
         eeg_sample, target_sample = img
 
         b, c, h, w, device, img_size = *eeg_sample.shape, eeg_sample.device, self.image_size
-        # eeg_sample = (b.1.32.32), target_sample=(b.3.32.32)
-        # Might need to reshape eeg_sample to be 3-channels wide by coping it twice
 
         assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
         timestep = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
-        # img = normalise_to_negative_one_to_one(img)
         eeg_sample = normalise_to_negative_one_to_one(eeg_sample)
         target_sample = normalise_to_negative_one_to_one(target_sample)
         return self.compute_loss_for_timestep(eeg_sample, target_sample, timestep, *args, **kwargs)

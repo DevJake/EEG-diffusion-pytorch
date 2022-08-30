@@ -5,7 +5,7 @@ cd diffusion
 #virtualenv venv
 #source venv/bin/activate
 sudo python3 setup.py install
-pip3 install wandb accelerate einops tqdm ema_pytorch torchvision
+#pip3 install wandb accelerate einops tqdm ema_pytorch torchvision
 #pip3 install -r requirements.txt
 #python3 -m wandb login
 accelerate config
@@ -15,7 +15,7 @@ nano ~/.config/rclone/rclone.conf
 # Add in your rclone config to connect to the repository storing all EEG and Targets data
 mkdir -p datasets/eeg/unsorted datasets/eeg/flower datasets/eeg/penguin datasets/eeg/guitar
 mkdir -p datasets/targets/unsorted datasets/targets/flower datasets/targets/penguin datasets/targets/guitar
-cd datasets/eeg/unsorted
+cd ~/diffusion/datasets/eeg/unsorted
 rclone copy gc:/bath-thesis-data/data/outputs/preprocessing . -P
 find . -name "*.tar.gz" -exec tar -xf {} \; # this will take some time to run...
 cd ~/diffusion/datasets/targets/
