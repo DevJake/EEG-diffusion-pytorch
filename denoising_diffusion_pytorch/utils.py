@@ -242,7 +242,6 @@ class EEGTargetsDataset(Dataset):
 
         eeg_sample = self.transformEEG(eeg_sample)
         eeg_sample = eeg_sample.repeat(3, 1, 1)
-        print('Loaded eeg and target samples')
         return eeg_sample, self.transformTarget(target_sample), label
 
     def __len__(self):
@@ -291,7 +290,8 @@ class Trainer(object):
 
         self.accelerator = Accelerator(
             split_batches=split_batches,
-            mixed_precision='fp16' if fp16 else 'no'
+            mixed_precision='fp16' if fp16 else 'no',
+            gradient_accumulation_steps=gradient_accumulate_every
         )
 
         self.accelerator.native_amp = amp
@@ -407,7 +407,6 @@ class Trainer(object):
 
                 for _ in range(self.gradient_accumulate_every):
                     # data = next(self.train_images_dataloader).to(device)
-                    print('Attempting to load new eeg and target samples')
                     eeg_sample, target_sample, _ = next(self.train_eeg_targets_dataloader)
                     eeg_sample.to(device)
                     target_sample.to(device)
@@ -415,15 +414,16 @@ class Trainer(object):
                     print('Successfully loaded...')
                     # eeg_sample, target_sample, label
 
-                    with accelerator.autocast():
-                        loss = self.diffusion_model(data)
-                        print('Got loss, now dividing by gradient accumulation rate')
-                        loss = loss / self.gradient_accumulate_every
-                        total_loss += loss.item()
-                        print('loss=', loss, ' total loss=', total_loss)
+                    # with accelerator.autocast():
+                    loss = self.diffusion_model(data)
+                    print('Got loss, now dividing by gradient accumulation rate')
+                    loss = loss / self.gradient_accumulate_every
+                    total_loss += loss.item()
+                    print('loss=', loss, ' total loss=', total_loss)
 
                     print('Performing backprop')
-                    accelerator.backward(loss)
+                    # accelerator.backward(loss)
+                    loss.backward()
                     print('Performed backprop!')
 
                 wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
