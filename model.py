@@ -27,7 +27,7 @@ trainer = Trainer(
     save_and_sample_every=100
 )
 
-if __name__ == '__main__':
+def main():
     # torch.multiprocessing.freeze_support()
     # freeze_support()
     trainer.train()

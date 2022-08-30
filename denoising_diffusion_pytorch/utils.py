@@ -288,6 +288,7 @@ class Trainer(object):
         super().__init__()
 
         self.accelerator = Accelerator(
+            log_with='wandb',
             split_batches=split_batches,
             mixed_precision='fp16' if fp16 else 'no'
         )
