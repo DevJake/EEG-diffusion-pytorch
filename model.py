@@ -1,9 +1,11 @@
+import wandb
+
 from denoising_diffusion_pytorch import Unet, GaussianDiffusion, Trainer
 
 model = Unet(
     dim=64,
     dim_mults=(1, 2, 4, 8),
-    channels=1
+    channels=3
 )
 
 diffusion = GaussianDiffusion(
@@ -27,7 +29,12 @@ trainer = Trainer(
     save_and_sample_every=100
 )
 
+
 def main():
+    wandb.login()
+    wandb.init(project='bath-thesis', entity='jd202')
+    wandb.watch(model)
+    wandb.watch(diffusion)
     # torch.multiprocessing.freeze_support()
     # freeze_support()
     trainer.train()

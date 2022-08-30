@@ -7,7 +7,7 @@ cd diffusion
 python3 setup.py install
 pip3 install wandb accelerate einops tqdm ema_pytorch torchvision
 #pip3 install -r requirements.txt
-python3 -m wandb login
+#python3 -m wandb login
 accelerate config
 sudo apt install rclone
 mkdir -p ~/.config/rclone

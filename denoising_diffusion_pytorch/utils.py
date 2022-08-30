@@ -276,9 +276,7 @@ class Trainer(object):
             #  allowing for the model to train on TPUs
             split_batches=False,
             convert_image_to_ext=None,  # A given extension to convert image types to
-            use_wandb=True,
-            wandb_project_name='bath-thesis',
-            wandb_entity='jd202'
+            use_wandb=True
     ):
         """
         :param split_batches: If the batch of images loaded should be split by
@@ -346,7 +344,6 @@ class Trainer(object):
 
         # wandb.login(key=os.environ['WANDB_API_KEY']) # Uncomment if `wandb login` does not work in the console
         if self.accelerator.is_main_process:
-            wandb.init(project=wandb_project_name, entity=wandb_entity)
 
             wandb.config = {
                 'learning_rate': training_learning_rate,
@@ -368,9 +365,6 @@ class Trainer(object):
                 'do_split_batches': split_batches
             }
 
-            wandb.watch(self.diffusion_model)
-            wandb.watch(self.diffusion_model.learning_model)
-            wandb.watch(self.ema.ema_model)
 
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
