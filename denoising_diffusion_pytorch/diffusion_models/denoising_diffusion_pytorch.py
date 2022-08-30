@@ -266,7 +266,7 @@ class GaussianDiffusion(nn.Module):
         but instead determines which sampling strategy to use (standard or reduced sample step count),
         image output dimensions and batch sizes.
         """
-	print('Now computing a sample...')
+        print('Now computing a sample...')
         batch_size = 16 if batch_size is None else batch_size  # default value
         image_size, channels = self.image_size, self.channels
         sampling_function = self.ddim_sample if self.is_ddim_sampling else self.compute_complete_sample
@@ -289,7 +289,7 @@ class GaussianDiffusion(nn.Module):
         return img
 
     def q_sample(self, x_start, t, noise=None):
-	print('Compute q_sample')
+        print('Compute q_sample')
         noise = default(noise, lambda: torch.randn_like(x_start))
         # Uses the supplied noise value if it exists,
         # or generates more Gaussian noise with the same dimensions as x_start
@@ -329,7 +329,7 @@ class GaussianDiffusion(nn.Module):
         :param timestep: The timestep to compute losses for. This can be updated linearly, or sampled randomly.
         """
         # b, c, h, w = x_start.shape # Commented out as these values are not used
-	print('Computing loss for timestep=', timestep)
+        print('Computing loss for timestep=', timestep)
         noise = default(noise, lambda: torch.randn_like(eeg_sample))
         # Generates random normal/Gaussian noise with the same dimensions as the given input
         # TODO when the self.objective value dictates predicting noise,
@@ -379,7 +379,7 @@ class GaussianDiffusion(nn.Module):
         wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
         # TODO log per-class loss, maybe Inception Score and/or FID.
         print('Computed loss:', loss.mean())
-	return loss.mean()
+        return loss.mean()
 
     def forward(self, img, *args, **kwargs):
         """
@@ -393,7 +393,7 @@ class GaussianDiffusion(nn.Module):
         # b, c, h, w, device, img_size, = *img.shape, img.device, self.image_size
         # TODO substitute x_start in for a different image. EEG to image, not EEG to EEG.
         eeg_sample, target_sample = img
-	print('Taking forwards step...')
+        print('Taking forwards step...')
 
         b, c, h, w, device, img_size = *eeg_sample.shape, eeg_sample.device, self.image_size
         # eeg_sample = (b.1.32.32), target_sample=(b.3.32.32)
