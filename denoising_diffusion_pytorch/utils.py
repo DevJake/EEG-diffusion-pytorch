@@ -1,4 +1,5 @@
 import math
+import multiprocessing
 import os
 import random
 import shutil
@@ -306,21 +307,13 @@ class Trainer(object):
         self.train_num_steps = num_training_steps
         self.image_size = diffusion_model.image_size
 
-        # dataset and dataloader
-
-        # self.train_images_dataset = GenericDataset(training_images_dir, self.image_size,
-        #                                            augment_horizontal_flip=augment_horizontal_flip,
-        #                                            convert_image_to=convert_image_to_ext)
-        # dataloader = DataLoader(self.train_images_dataset, batch_size=train_batch_size, shuffle=True, pin_memory=True,
-        #                         num_workers=cpu_count())
-
         self.train_images_dataset = EEGTargetsDataset()
         dataloader = DataLoader(self.train_images_dataset,
                                 batch_size=train_batch_size,
                                 shuffle=True,
                                 pin_memory=True,
-                                # num_workers=os.cpu_count())
-                                num_workers=0)  # TODO remove
+                                num_workers=multiprocessing.cpu_count())
+        # num_workers=0)  # TODO remove
 
         # dataloader = self.accelerator.prepare(dataloader)
         # self.train_images_dataloader = cycle(dataloader)
@@ -406,23 +399,20 @@ class Trainer(object):
                 total_loss = 0.
 
                 for _ in range(self.gradient_accumulate_every):
-                    # data = next(self.train_images_dataloader).to(device)
                     eeg_sample, target_sample, _ = next(self.train_eeg_targets_dataloader)
                     eeg_sample.to(device)
                     target_sample.to(device)
                     data = (eeg_sample, target_sample)
-                    print('Successfully loaded...')
                     # eeg_sample, target_sample, label
 
-                    # with accelerator.autocast():
-                    loss = self.diffusion_model(data)
-                    loss = loss / self.gradient_accumulate_every
-                    total_loss += loss.item()
-                    print('loss=', loss, ' total loss=', total_loss)
+                    with self.accelerator.autocast():
+                        loss = self.diffusion_model(data)
+                        loss = loss / self.gradient_accumulate_every
+                        total_loss += loss.item()
+                        print('loss=', loss, ' total loss=', total_loss)
 
                     print('Performing backprop')
-                    accelerator.backward(loss)
-                    # loss.backward()
+                    self.accelerator.backward(loss)
                     print('Performed backprop!')
 
                 # wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
