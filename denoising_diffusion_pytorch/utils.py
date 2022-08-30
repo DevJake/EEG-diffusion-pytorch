@@ -319,8 +319,8 @@ class Trainer(object):
                                 batch_size=train_batch_size,
                                 shuffle=True,
                                 pin_memory=True,
-                                num_workers=os.cpu_count())
-                                #num_workers=0)  # TODO remove
+                                # num_workers=os.cpu_count())
+                                num_workers=0)  # TODO remove
 
         # dataloader = self.accelerator.prepare(dataloader)
         # self.train_images_dataloader = cycle(dataloader)
