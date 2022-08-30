@@ -3,7 +3,6 @@ from random import random
 
 import torch
 import torch.nn.functional as F
-import wandb
 from einops import reduce
 from torch import nn
 from tqdm.auto import tqdm
@@ -16,7 +15,6 @@ ModelPrediction = namedtuple('ModelPrediction', ['pred_noise', 'pred_x_start'])
 
 
 # TODO add documentation/descriptions to every method and class
-# TODO add WandB.ai support
 # TODO generate model diagram and per-layer parameter count
 
 
@@ -374,7 +372,7 @@ class GaussianDiffusion(nn.Module):
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, timestep, loss.shape)
-        wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
+        # wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
         # TODO log per-class loss, maybe Inception Score and/or FID.
         return loss.mean()
 
