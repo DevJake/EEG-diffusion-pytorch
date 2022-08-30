@@ -321,7 +321,7 @@ class GaussianDiffusion(nn.Module):
         After this, the losses between the true image and the generated image (via the diffusion process)
         are compared, their losses computed, and returned.
 
-        :param x_start: The given image, x_0, to use for bother processes.
+        :param x_start: The given image, x_0, to use for other processes.
         :param noise: A sample of noise to be applied to the given x_start value.
         :param timestep: The timestep to compute losses for. This can be updated linearly, or sampled randomly.
         """
@@ -356,17 +356,16 @@ class GaussianDiffusion(nn.Module):
             # If we are trying to predict the noise that was just added
 
             # target = noise
-            target = torch.randn_like(target_sample)
+            target = default(noise, torch.randn_like(target_sample))
         elif self.objective == 'pred_x0':
             # If we are trying to predict the original, true image, x_0
-            # target = x_start
+            # target = x_start #
             target = target_sample
         else:
             raise ValueError(f'unknown objective {self.objective}')
 
         loss = self.loss_fn(model_out, target, reduction='none')
-        if model_out.shape[1] == 1:
-            model_out.stack
+
         # TODO model_out is 32x1x32x32, target is 32x3x32x32. Mismatch does not cause a crash, but...
         #  UserWarning: Using a target size (torch.Size([32, 3, 32, 32])) that is different to
         #  the input size (torch.Size([32, 1, 32, 32])). This will likely lead to incorrect results
