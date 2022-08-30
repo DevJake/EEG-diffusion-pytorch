@@ -31,7 +31,7 @@ trainer = Trainer(
 
 wandb.login()
 wandb.init(project='bath-thesis', entity='jd202')
-wandb.watch(model)
-wandb.watch(diffusion)
+# wandb.watch(model)
+# wandb.watch(diffusion)
 
 trainer.train()

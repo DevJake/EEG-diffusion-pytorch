@@ -416,14 +416,13 @@ class Trainer(object):
 
                     # with accelerator.autocast():
                     loss = self.diffusion_model(data)
-                    print('Got loss, now dividing by gradient accumulation rate')
                     loss = loss / self.gradient_accumulate_every
                     total_loss += loss.item()
                     print('loss=', loss, ' total loss=', total_loss)
 
                     print('Performing backprop')
-                    # accelerator.backward(loss)
-                    loss.backward()
+                    accelerator.backward(loss)
+                    # loss.backward()
                     print('Performed backprop!')
 
                 wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
