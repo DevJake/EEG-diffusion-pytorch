@@ -29,12 +29,13 @@ trainer = Trainer(
     save_and_sample_every=100
 )
 
+wandb.login()
+wandb.init(project='bath-thesis', entity='jd202')
+wandb.watch(model)
+wandb.watch(diffusion)
+
 
 def main():
-    wandb.login()
-    wandb.init(project='bath-thesis', entity='jd202')
-    wandb.watch(model)
-    wandb.watch(diffusion)
     # torch.multiprocessing.freeze_support()
     # freeze_support()
     trainer.train()
