@@ -395,8 +395,8 @@ class Trainer(object):
 
                 for _ in range(self.gradient_accumulate_every):
                     eeg_sample, target_sample, _ = next(self.train_eeg_targets_dataloader)
-                    eeg_sample.to(device)
-                    target_sample.to(device)
+                    # eeg_sample.to(device)
+                    # target_sample.to(device)
                     data = (eeg_sample, target_sample)
                     # eeg_sample, target_sample, label
 
@@ -422,7 +422,7 @@ class Trainer(object):
                 accelerator.wait_for_everyone()
 
                 if accelerator.is_main_process:
-                    self.ema.to(device)
+                    # self.ema.to(device)
                     self.ema.update()
 
                     if self.step != 0 and self.step % self.save_and_sample_every == 0:
