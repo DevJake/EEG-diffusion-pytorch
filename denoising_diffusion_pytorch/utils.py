@@ -238,7 +238,7 @@ class EEGTargetsDataset(Dataset):
             target_sample = bg
 
         eeg_sample = self.transformEEG(eeg_sample)
-        eeg_sample = torch.cat(eeg_sample.clone(), eeg_sample.clone())
+        eeg_sample = eeg_sample.repeat(3, 1, 1)
 
         return eeg_sample, self.transformTarget(target_sample), label
 
