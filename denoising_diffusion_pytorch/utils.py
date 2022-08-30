@@ -7,7 +7,7 @@ from functools import partial
 from pathlib import Path
 
 import torch
-import wandb
+# import wandb
 from PIL import Image
 from accelerate import Accelerator
 from ema_pytorch import EMA
@@ -345,27 +345,27 @@ class Trainer(object):
         self.diffusion_model, self.optimiser = self.accelerator.prepare(self.diffusion_model, self.optimiser)
 
         # wandb.login(key=os.environ['WANDB_API_KEY']) # Uncomment if `wandb login` does not work in the console
-        if self.accelerator.is_main_process:
+        # if self.accelerator.is_main_process:
 
-            wandb.config = {
-                'learning_rate': training_learning_rate,
-                'training_timesteps': self.train_num_steps,
-                'sampling_timesteps': self.diffusion_model.sampling_timesteps,
-                'diffusion_model': self.diffusion_model,
-                'training_model': self.diffusion_model.learning_model,
-                'image_size': self.image_size,
-                'number_of_samples': self.num_samples,
-                'batch_size': self.batch_size,
-                'use_amp': amp,
-                'use_fp16': fp16,
-                'gradient_accumulation_rate': gradient_accumulate_every,
-                'do_horizontal_flip': augment_horizontal_flip,
-                'ema_update_rate': ema_update_every,
-                'ema_decay': ema_decay,
-                'adam_betas': adam_betas,
-                'save_and_sample_rate': save_and_sample_every,
-                'do_split_batches': split_batches
-            }
+        # wandb.config = {
+        #     'learning_rate': training_learning_rate,
+        #     'training_timesteps': self.train_num_steps,
+        #     'sampling_timesteps': self.diffusion_model.sampling_timesteps,
+        #     'diffusion_model': self.diffusion_model,
+        #     'training_model': self.diffusion_model.learning_model,
+        #     'image_size': self.image_size,
+        #     'number_of_samples': self.num_samples,
+        #     'batch_size': self.batch_size,
+        #     'use_amp': amp,
+        #     'use_fp16': fp16,
+        #     'gradient_accumulation_rate': gradient_accumulate_every,
+        #     'do_horizontal_flip': augment_horizontal_flip,
+        #     'ema_update_rate': ema_update_every,
+        #     'ema_decay': ema_decay,
+        #     'adam_betas': adam_betas,
+        #     'save_and_sample_rate': save_and_sample_every,
+        #     'do_split_batches': split_batches
+        # }
 
 
     def save(self, milestone):
@@ -425,7 +425,7 @@ class Trainer(object):
                     # loss.backward()
                     print('Performed backprop!')
 
-                wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
+                # wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
                 pbar.set_description(f'loss: {total_loss:.4f}')
 
                 accelerator.wait_for_everyone()

@@ -1,5 +1,3 @@
-import wandb
-
 from denoising_diffusion_pytorch import Unet, GaussianDiffusion, Trainer
 
 model = Unet(
@@ -29,8 +27,8 @@ trainer = Trainer(
     save_and_sample_every=100
 )
 
-wandb.login()
-wandb.init(project='bath-thesis', entity='jd202')
+# wandb.login()
+# wandb.init(project='bath-thesis', entity='jd202')
 # wandb.watch(model)
 # wandb.watch(diffusion)
 

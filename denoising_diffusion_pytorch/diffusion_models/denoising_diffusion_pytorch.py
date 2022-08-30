@@ -3,7 +3,7 @@ from random import random
 
 import torch
 import torch.nn.functional as F
-import wandb
+# import wandb
 from einops import reduce
 from torch import nn
 from tqdm.auto import tqdm
@@ -366,14 +366,10 @@ class GaussianDiffusion(nn.Module):
 
         loss = self.loss_fn(model_out, target, reduction='none')
 
-        # TODO model_out is 32x1x32x32, target is 32x3x32x32. Mismatch does not cause a crash, but...
-        #  UserWarning: Using a target size (torch.Size([32, 3, 32, 32])) that is different to
-        #  the input size (torch.Size([32, 1, 32, 32])). This will likely lead to incorrect results
-        #  due to broadcasting. Please ensure they have the same size.
         loss = reduce(loss, 'b ... -> b (...)', 'mean')
 
         loss = loss * extract(self.p2_loss_weight, timestep, loss.shape)
-        wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
+        # wandb.log({"raw_losses": loss, "averaged_loss": loss.mean().item()})
         # TODO log per-class loss, maybe Inception Score and/or FID.
         return loss.mean()
 
