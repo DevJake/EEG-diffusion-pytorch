@@ -194,8 +194,8 @@ class EEGTargetsDataset(Dataset):
             self.data['eeg'][label] = d0
             self.data['targets'][label] = d1
 
-            print(f'Loaded {len(d0)} images for EEG/{label}')
-            print(f'Loaded {len(d1)} images for Targets/{label}')
+            # print(f'Loaded {len(d0)} images for EEG/{label}')
+            # print(f'Loaded {len(d1)} images for Targets/{label}')
 
             # self.indices['eeg'][label] = 0
             # self.indices['target'][label] = 0
@@ -229,7 +229,7 @@ class EEGTargetsDataset(Dataset):
         # TODO do not return names, read in the images instead
 
         eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
-        target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}')
+        target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}').convert('RGB')
 
         if target_sample.mode in ('RGBA', 'LA') or (target_sample.mode == 'P' and 'transparency' in target_sample.info):
             alpha = target_sample.convert('RGBA').split()[-1]
