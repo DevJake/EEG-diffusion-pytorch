@@ -34,5 +34,8 @@ wandb.init(project='bath-thesis', entity='jd202')
 wandb.watch(model)
 wandb.watch(diffusion)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5a238ad9d7731bcdc422797f44434f48f62104f9
 trainer.train()
