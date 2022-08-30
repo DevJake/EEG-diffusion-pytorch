@@ -228,7 +228,7 @@ class EEGTargetsDataset(Dataset):
         target_sample = random.choice(self.data['targets'][label])
         # TODO do not return names, read in the images instead
 
-        eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}')
+        eeg_sample = Image.open(f'{self.eeg_directory}/{label}/{eeg_sample}').convert('RGB')
         target_sample = Image.open(f'{self.targets_directory}/{label}/{target_sample}').convert('RGB')
 
         if target_sample.mode in ('RGBA', 'LA') or (target_sample.mode == 'P' and 'transparency' in target_sample.info):

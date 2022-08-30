@@ -365,6 +365,8 @@ class GaussianDiffusion(nn.Module):
             raise ValueError(f'unknown objective {self.objective}')
 
         loss = self.loss_fn(model_out, target, reduction='none')
+        if model_out.shape[1] == 1:
+            model_out.stack
         # TODO model_out is 32x1x32x32, target is 32x3x32x32. Mismatch does not cause a crash, but...
         #  UserWarning: Using a target size (torch.Size([32, 3, 32, 32])) that is different to
         #  the input size (torch.Size([32, 1, 32, 32])). This will likely lead to incorrect results
