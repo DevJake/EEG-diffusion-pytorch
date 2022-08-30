@@ -414,17 +414,16 @@ class Trainer(object):
                     data = (eeg_sample, target_sample)
                     print('Successfully loaded...')
                     # eeg_sample, target_sample, label
-                    #
-                    # TODO either images are not being loaded, or it isn't getting put onto the device correctly
 
-                    with self.accelerator.autocast():
-                        loss = self.diffusion_model(data)
-                        # TODO in goes our EEG data. Need to also pass in its class label (guitar/penguin/flower)
-                        loss = loss / self.gradient_accumulate_every
-                        total_loss += loss.item()
-
+                    # with self.accelerator.autocast():
+                    loss = self.diffusion_model(data)
+                    print('Got loss, now dividing by gradient accumulation rate')
+                    loss = loss / self.gradient_accumulate_every
+                    total_loss += loss.item()
+                    print('loss=', loss, ' total loss=', total_loss)
+                    print('Performing backprop')
                     self.accelerator.backward(loss)
-                print('Performed backprop!')
+                    print('Performed backprop!')
 
                 wandb.log({'total_training_loss': total_loss, 'training_timestep': self.step})
                 pbar.set_description(f'loss: {total_loss:.4f}')
