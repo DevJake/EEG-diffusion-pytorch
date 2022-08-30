@@ -168,15 +168,18 @@ class EEGTargetsDataset(Dataset):
 
         # TODO load eeg recursively, load targets recursively, generate labels for each, group them together
 
+        os.makedirs(eeg_directory, exist_ok=True)
+        os.makedirs(targets_directory, exist_ok=True)
+
         for label in labels:
             assert os.path.exists(f'{eeg_directory}/{label}'), \
                 f'The EEG directory for `{label}` does not exist.'
             assert os.path.exists(f'{targets_directory}/{label}'), \
                 f'The targets directory for `{label}` does not exist.'
 
-        for ftype in file_types:
-            find_and_move_unsorted(eeg_directory, ftype)
-            find_and_move_unsorted(targets_directory, ftype)
+        # for ftype in file_types:
+        #     find_and_move_unsorted(eeg_directory, ftype)
+        #     find_and_move_unsorted(targets_directory, ftype)
 
         for label in labels:
             d0 = os.listdir(f'{eeg_directory}/{label}')
