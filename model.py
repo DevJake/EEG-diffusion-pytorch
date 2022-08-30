@@ -34,8 +34,4 @@ wandb.init(project='bath-thesis', entity='jd202')
 wandb.watch(model)
 wandb.watch(diffusion)
 
-
-def main():
-    # torch.multiprocessing.freeze_support()
-    # freeze_support()
-    trainer.train()
+trainer.train()
