@@ -18,6 +18,7 @@ mkdir -p datasets/targets/unsorted datasets/targets/flower datasets/targets/peng
 cd ~/diffusion/datasets/eeg/unsorted
 rclone copy gc:/bath-thesis-data/data/outputs/preprocessing . -P
 find . -name "*.tar.gz" -exec tar -xf {} \; # this will take some time to run...
+find ./ -type f -exec mv --backup=numbered {} ./ -v \;
 cd ~/diffusion/datasets/targets/
 rclone copy gc:/bath-thesis-data/data/classes/32x32.tar . -P
 tar -xf 32x32.tar

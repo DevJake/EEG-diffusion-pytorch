@@ -90,7 +90,8 @@ class GenericDataset(Dataset):
 def find_and_move_unsorted(src_dir, ftype: str):
     if len(os.listdir(f'{src_dir}/unsorted')) <= 0:
         pass
-    for path in Path(f'{src_dir}/unsorted').rglob(f'*.{ftype}'):
+    # for path in Path(f'{src_dir}/unsorted').rglob(f'*.{ftype}'):
+    for path in Path(f'{src_dir}/unsorted').rglob(f'*.*'):
         name = str(path).lower().split('/')[-1]
         p = None
         p = 'penguin' if 'penguin' in name else p
