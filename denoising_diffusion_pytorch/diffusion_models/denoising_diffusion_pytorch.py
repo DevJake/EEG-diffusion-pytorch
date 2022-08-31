@@ -8,6 +8,7 @@ from einops import reduce
 from torch import nn
 from tqdm.auto import tqdm
 
+from denoising_diffusion_pytorch import utils
 from denoising_diffusion_pytorch.utils import normalise_to_negative_one_to_one, \
     unnormalise_to_zero_to_one, extract, linear_beta_schedule, cosine_beta_schedule, default
 
@@ -217,32 +218,26 @@ class GaussianDiffusion(nn.Module):
         return img
 
     @torch.no_grad()
-    def ddim_sample(self, shape, device, clip_denoised=True):
-        batch, \
-        total_timesteps, sampling_timesteps, \
-        eta, objective = shape[0], \
-                         self.num_timesteps, self.sampling_timesteps, \
-                         self.ddim_sampling_eta, self.objective
-        # TODO slow sampling issue likely originates from here, not being put on the correct device
+    def ddim_sample(self, shape, clip_denoised=True):
+        batch, device, total_timesteps, sampling_timesteps, eta, objective = shape[
+                                                                                 0], self.betas.device, self.num_timesteps, self.sampling_timesteps, self.ddim_sampling_eta, self.objective
 
         times = torch.linspace(0., total_timesteps, steps=sampling_timesteps + 2)[:-1]
         times = list(reversed(times.int().tolist()))
         time_pairs = list(zip(times[:-1], times[1:]))
 
         img = torch.randn(shape, device=device)
-        # img = torch.randn(shape)
         # Begin image, xT, sampled as random noise
         # TODO need a way to specify a noise sample from the EEG forward process,
         #  not to randomly generate it
 
         x_start = None
 
-        for time, time_next in tqdm(time_pairs, desc='Sampling loop time step'):
-            alpha = self.alphas_cumprod_prev[time]
-            alpha_next = self.alphas_cumprod_prev[time_next]
+        for time, time_next in tqdm(time_pairs, desc='sampling loop time step'):
+            alpha = self.alphas_cumprod[time]
+            alpha_next = self.alphas_cumprod[time_next]
 
             time_cond = torch.full((batch,), time, device=device, dtype=torch.long)
-            # time_cond = torch.full((batch,), time, dtype=torch.long)
 
             self_cond = x_start if self.self_condition else None
 
@@ -256,13 +251,15 @@ class GaussianDiffusion(nn.Module):
 
             noise = torch.randn_like(img) if time_next > 0 else 0.
 
-            img = x_start * alpha_next.sqrt() + c * pred_noise + sigma * noise
+            img = x_start * alpha_next.sqrt() + \
+                  c * pred_noise + \
+                  sigma * noise
 
-        img = unnormalise_to_zero_to_one(img)
+        img = utils.unnormalise_to_zero_to_one(img)
         return img
 
     @torch.no_grad()
-    def sample(self, batch_size, device):
+    def sample(self, batch_size):
         """
         This method computes a given number of samples from the model in one sampling step.
         This method does not execute the many inferences required to draw a sample
@@ -272,7 +269,7 @@ class GaussianDiffusion(nn.Module):
         batch_size = 16 if batch_size is None else batch_size  # default value
         image_size, channels = self.image_size, self.channels
         sampling_function = self.ddim_sample if self.is_ddim_sampling else self.compute_complete_sample
-        return sampling_function((batch_size, channels, image_size, image_size), device)
+        return sampling_function((batch_size, channels, image_size, image_size))
 
     @torch.no_grad()
     def interpolate(self, x1, x2, t=None, lam=0.5):
