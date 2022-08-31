@@ -418,7 +418,7 @@ class Trainer(object):
                 accelerator.wait_for_everyone()
 
                 if accelerator.is_main_process:
-                    # self.ema.to(device)
+                    self.ema.to(device)
                     self.ema.update()
 
                     if self.step != 0 and self.step % self.save_and_sample_every == 0:
@@ -427,15 +427,12 @@ class Trainer(object):
                         with torch.no_grad():
                             milestone = self.step // self.save_and_sample_every
                             batches = num_to_groups(self.num_samples, self.batch_size)
-                            all_images_list = list(
-                                map(lambda n: self.ema.ema_model.sample(batch_size=n, device=device), batches))
+                            all_images_list = list(map(lambda n: self.ema.ema_model.sample(batch_size=n), batches))
 
                         all_images = torch.cat(all_images_list, dim=0)
                         utils.save_image(all_images, str(self.results_folder / f'sample-{milestone}.png'),
                                          nrow=int(math.sqrt(self.num_samples)))
                         self.save(milestone)
-                        # TODO have this run for every self.save_and_sample_every,
-                        #  but without sampling (currently broken on TPUs)
 
                 self.step += 1
                 pbar.update(1)
