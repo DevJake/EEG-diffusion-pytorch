@@ -225,7 +225,7 @@ class GaussianDiffusion(nn.Module):
                          self.ddim_sampling_eta, self.objective
         # TODO slow sampling issue likely originates from here, not being put on the correct device
 
-        times = torch.linspace(0., total_timesteps, steps=sampling_timesteps + 2)[:-1]
+        times = torch.linspace(0., total_timesteps, steps=sampling_timesteps + 2, device=device)[:-1]
         times = list(reversed(times.int().tolist()))
         time_pairs = list(zip(times[:-1], times[1:]))
 
