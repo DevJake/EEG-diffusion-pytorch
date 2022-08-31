@@ -54,10 +54,10 @@ default_hypers = dict(
 
 wandb.init(config=default_hypers, project='bath-thesis', entity='jd202')
 
-with open('./sweep.yaml') as f:
-    sweep_config = yaml.load(f, Loader=SafeLoader)
-
-sweep_id = wandb.sweep(sweep_config, entity='jd202', project='bath-thesis')
+# with open('./sweep.yaml') as f:
+#     sweep_config = yaml.load(f, Loader=SafeLoader)
+#
+# sweep_id = wandb.sweep(sweep_config, entity='jd202', project='bath-thesis')
 
 
 model = Unet(
