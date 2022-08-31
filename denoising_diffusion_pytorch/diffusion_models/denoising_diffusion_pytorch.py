@@ -204,8 +204,8 @@ class GaussianDiffusion(nn.Module):
         many samples should be generated in one iteration.
         :param device: The device to use for computing the samples on.
         """
-        # img = torch.randn(shape, device=device)
-        img = torch.randn(shape)
+        img = torch.randn(shape, device=device)
+        # img = torch.randn(shape)
 
         x_start = None
 
@@ -225,12 +225,12 @@ class GaussianDiffusion(nn.Module):
                          self.ddim_sampling_eta, self.objective
         # TODO slow sampling issue likely originates from here, not being put on the correct device
 
-        times = torch.linspace(0., total_timesteps, steps=sampling_timesteps + 2, device=device)[:-1]
+        times = torch.linspace(0., total_timesteps, steps=sampling_timesteps + 2)[:-1]
         times = list(reversed(times.int().tolist()))
         time_pairs = list(zip(times[:-1], times[1:]))
 
-        # img = torch.randn(shape, device=device)
-        img = torch.randn(shape)
+        img = torch.randn(shape, device=device)
+        # img = torch.randn(shape)
         # Begin image, xT, sampled as random noise
         # TODO need a way to specify a noise sample from the EEG forward process,
         #  not to randomly generate it
@@ -241,8 +241,8 @@ class GaussianDiffusion(nn.Module):
             alpha = self.alphas_cumprod_prev[time]
             alpha_next = self.alphas_cumprod_prev[time_next]
 
-            # time_cond = torch.full((batch,), time, device=device, dtype=torch.long)
-            time_cond = torch.full((batch,), time, dtype=torch.long)
+            time_cond = torch.full((batch,), time, device=device, dtype=torch.long)
+            # time_cond = torch.full((batch,), time, dtype=torch.long)
 
             self_cond = x_start if self.self_condition else None
 
@@ -281,14 +281,14 @@ class GaussianDiffusion(nn.Module):
 
         assert x1.shape == x2.shape
 
-        # t_batched = torch.stack([torch.tensor(t, device=device)] * b)
-        t_batched = torch.stack([torch.tensor(t)] * b)
+        t_batched = torch.stack([torch.tensor(t, device=device)] * b)
+        # t_batched = torch.stack([torch.tensor(t)] * b)
         xt1, xt2 = map(lambda x: self.q_sample(x, t=t_batched), (x1, x2))
 
         img = (1 - lam) * xt1 + lam * xt2
         for i in tqdm(reversed(range(0, t)), desc='interpolation sample time step', total=t):
-            # img = self.compute_sample_for_timestep(img, torch.full((b,), i, device=device, dtype=torch.long))
-            img = self.compute_sample_for_timestep(img, torch.full((b,), i, dtype=torch.long))
+            img = self.compute_sample_for_timestep(img, torch.full((b,), i, device=device, dtype=torch.long))
+            # img = self.compute_sample_for_timestep(img, torch.full((b,), i, dtype=torch.long))
 
         return img
 
@@ -388,8 +388,8 @@ class GaussianDiffusion(nn.Module):
         b, c, h, w, device, img_size = *eeg_sample.shape, eeg_sample.device, self.image_size
 
         assert h == img_size and w == img_size, f'height and width of image must be {img_size}'
-        # timestep = torch.randint(0, self.num_timesteps, (b,), device=device).long()
-        timestep = torch.randint(0, self.num_timesteps, (b,)).long()
+        timestep = torch.randint(0, self.num_timesteps, (b,), device=device).long()
+        # timestep = torch.randint(0, self.num_timesteps, (b,)).long()
 
         eeg_sample = normalise_to_negative_one_to_one(eeg_sample)
         target_sample = normalise_to_negative_one_to_one(target_sample)
