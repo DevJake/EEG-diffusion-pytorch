@@ -180,9 +180,9 @@ class EEGTargetsDataset(Dataset):
             assert os.path.exists(f'{targets_directory}/{label}'), \
                 f'The targets directory for `{label}` does not exist.'
 
-        for ftype in file_types:
-            find_and_move_unsorted(eeg_directory, ftype)
-            find_and_move_unsorted(targets_directory, ftype)
+        # for ftype in file_types:
+        #     find_and_move_unsorted(eeg_directory, ftype)
+        #     find_and_move_unsorted(targets_directory, ftype)
 
         for label in labels:
             d0 = os.listdir(f'{eeg_directory}/{label}')
