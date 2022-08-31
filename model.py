@@ -1,7 +1,9 @@
 import wandb
+import torch
 
 from denoising_diffusion_pytorch import Unet, GaussianDiffusion, Trainer
 
+torch.cuda.empty_cache()
 wandb.login()
 
 wandb.config.learning_rate = 1e-4
