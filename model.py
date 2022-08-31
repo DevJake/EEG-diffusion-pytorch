@@ -24,6 +24,7 @@ wandb.loss_type = 'l1'
 wandb.unet_dim = 64
 wandb.unet_mults = (1, 2, 4, 8)
 wandb.unet_channels = 3
+wandb.training_objective = 'pred_x0'
 
 model = Unet(
     dim=wandb.unet_dim,
@@ -37,7 +38,8 @@ diffusion = GaussianDiffusion(
     timesteps=wandb.timesteps,  # number of steps
     sampling_timesteps=wandb.sampling_timesteps,
     # number of sampling timesteps (using ddim for faster inference [see citation for ddim paper])
-    loss_type=wandb.loss_type  # L1 or L2
+    loss_type=wandb.loss_type,  # L1 or L2
+    training_objective=wandb.training_objective
 )
 
 trainer = Trainer(
