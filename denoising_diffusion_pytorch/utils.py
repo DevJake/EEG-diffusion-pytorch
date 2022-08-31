@@ -334,27 +334,6 @@ class Trainer(object):
         self.diffusion_model.learning_model = self.accelerator.prepare(self.diffusion_model.learning_model)
         # wandb.login(key=os.environ['WANDB_API_KEY']) # Uncomment if `wandb login` does not work in the console
 
-        wandb.config = {
-            'learning_rate': training_learning_rate,
-            'training_timesteps': self.train_num_steps,
-            'sampling_timesteps': self.diffusion_model.sampling_timesteps,
-            'diffusion_model': self.diffusion_model,
-            'training_model': self.diffusion_model.learning_model,
-            'image_size': self.image_size,
-            'number_of_samples': self.num_samples,
-            'batch_size': self.batch_size,
-            'use_amp': amp,
-            'use_fp16': fp16,
-            'gradient_accumulation_rate': gradient_accumulate_every,
-            'do_horizontal_flip': augment_horizontal_flip,
-            'ema_update_rate': ema_update_every,
-            'ema_decay': ema_decay,
-            'adam_betas': adam_betas,
-            'save_and_sample_rate': save_and_sample_every,
-            'do_split_batches': split_batches
-        }
-
-
     def save(self, milestone):
         if not self.accelerator.is_local_main_process:
             return
