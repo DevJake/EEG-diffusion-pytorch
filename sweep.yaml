@@ -1,0 +1,54 @@
+program: accelerate launch model.py
+command:
+  - ${program}
+method: bayes
+metric:
+  goal: minimize
+  name: total_training_loss
+parameters:
+  ema_update_rate:
+    max: 20
+    min: 5
+    distribution: int_uniform
+  gradient_accumulation_rate:
+    max: 20
+    min: 1
+    distribution: int_uniform
+  training_timesteps:
+    max: 2000
+    min: 500
+    distribution: int_uniform
+  training_objective:
+    values:
+      - pred_x0
+      - pred_noise
+    distribution: categorical
+  learning_rate:
+    max: 0.1
+    min: 0.00001
+    distribution: uniform
+  image_size:
+    max: 64
+    min: 16
+    distribution: int_uniform
+  batch_size:
+    max: 512
+    min: 32
+    distribution: int_uniform
+  timesteps:
+    max: 8000
+    min: 200
+    distribution: int_uniform
+  loss_type:
+    values:
+      - L2
+      - L1
+    distribution: categorical
+  ema_decay:
+    max: 1.99
+    min: 0.4
+    distribution: uniform
+  unet_dim:
+    max: 128
+    min: 8
+    distribution: int_uniform
