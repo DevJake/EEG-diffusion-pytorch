@@ -293,7 +293,7 @@ class Trainer(object):
 
         self.accelerator.native_amp = amp
 
-        assert has_int_square_root(num_samples), 'number of samples must have an integer square root'
+        assert has_int_square_root(num_samples), 'The number of samples must have an integer square root'
 
         self.diffusion_model = diffusion_model
         self.num_samples = num_samples

@@ -1,4 +1,4 @@
-program: accelerate launch model.py
+program: /usr/local/bin/accelerate launch model.py
 command:
   - ${program}
 method: bayes

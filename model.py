@@ -45,12 +45,20 @@ default_hypers = dict(
     timesteps = 1000,
     loss_type = 'L2',
     unet_dim = 16,
-    unet_mults = (1, 2 4, 8),
+    unet_mults = (1, 2, 4, 8),
     unet_channels = 3,
     training_objective = 'pred_x0'
 )
 
+
+
 wandb.init(config=default_hypers, project='bath-thesis', entity='jd202')
+
+with open('./sweep.yaml') as f:
+    sweep_config = yaml.load(f, Loader=SafeLoader)
+
+sweep_id = wandb.sweep(sweep_config, entity='jd202', project='bath-thesis')
+
 
 model = Unet(
     dim=wandb.config.unet_dim,
@@ -87,3 +95,5 @@ wandb.watch(model)
 wandb.watch(diffusion)
 
 trainer.train()
+
+wandb.finish()
