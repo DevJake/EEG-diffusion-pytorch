@@ -20,18 +20,28 @@ diffusion = GaussianDiffusion(
 trainer = Trainer(
     diffusion,
     '/Users/jake/Desktop/scp/cifar',
-    train_batch_size=32,
-    training_learning_rate=8e-5,
-    num_training_steps=200000,  # total training steps
+    train_batch_size=128,
+    training_learning_rate=1e-4,
+    num_training_steps=400000,  # total training steps
     gradient_accumulate_every=2,  # gradient accumulation steps
     ema_decay=0.995,  # exponential moving average decay
     amp=False,  # turn on mixed precision
-    save_and_sample_every=100
+    save_and_sample_every=1000
 )
 
 wandb.login()
 wandb.init(project='bath-thesis', entity='jd202')
 wandb.watch(model)
 wandb.watch(diffusion)
+
+# wandb.learning_rate = 1e-4
+# wandb.training_timesteps = 400000
+# wandb.sampling_timesteps = 250
+# wandb.image_size = 32
+# wandb.number_of_samples = 25
+# wandb.batch_size = 256
+# wandb.use_amp = False
+# wandb.use_fp16 = False
+
 
 trainer.train()
