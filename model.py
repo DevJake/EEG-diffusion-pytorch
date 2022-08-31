@@ -6,28 +6,51 @@ from denoising_diffusion_pytorch import Unet, GaussianDiffusion, Trainer
 torch.cuda.empty_cache()
 wandb.login()
 
-wandb.config.learning_rate = 1e-4
-wandb.config.training_timesteps = 400000
-wandb.config.sampling_timesteps = 250
-wandb.config.image_size = 32
-wandb.config.number_of_samples = 25
-wandb.config.batch_size = 256
-wandb.config.use_amp = False
-wandb.config.use_fp16 = False
-wandb.config.gradient_accumulation_rate = 2
-wandb.config.ema_update_rate = 10
-wandb.config.ema_decay = 0.995
-wandb.config.adam_betas = (0.9, 0.99)
-wandb.config.save_and_sample_rate = 1000
-wandb.config.do_split_batches = False
-wandb.config.timesteps = 1000
-wandb.config.loss_type = 'l1'
-wandb.config.unet_dim = 64
-wandb.config.unet_mults = (1, 2, 4, 8)
-wandb.config.unet_channels = 3
-wandb.config.training_objective = 'pred_x0'
+# wandb.config.learning_rate = 3e-4
+# wandb.config.training_timesteps = 5000
+# wandb.config.sampling_timesteps = 250
+# wandb.config.image_size = 32
+# wandb.config.number_of_samples = 25
+# wandb.config.batch_size = 512
+# wandb.config.use_amp = False
+# wandb.config.use_fp16 = True
+# wandb.config.gradient_accumulation_rate = 2
+# wandb.config.ema_update_rate = 10
+# wandb.config.ema_decay = 0.995
+# wandb.config.adam_betas = (0.9, 0.99)
+# wandb.config.save_and_sample_rate = 1000
+# wandb.config.do_split_batches = False
+# wandb.config.timesteps = 1000
+# wandb.config.loss_type = 'L2'
+# wandb.config.unet_dim = 16
+# wandb.config.unet_mults = (1, 2, 4, 8)
+# wandb.config.unet_channels = 3
+# wandb.config.training_objective = 'pred_x0'
 
-wandb.init(project='bath-thesis', entity='jd202')
+default_hypers = dict(
+    learning_rate=3e-4,
+    training_timesteps = 1001,
+    sampling_timesteps = 250,
+    image_size = 32,
+    number_of_samples = 25,
+    batch_size = 256,
+    use_amp = False,
+    use_fp16 = False,
+    gradient_accumulation_rate = 2,
+    ema_update_rate = 10,
+    ema_decay = 0.995,
+    adam_betas = (0.9, 0.99),
+    save_and_sample_rate = 1000,
+    do_split_batches = False,
+    timesteps = 1000,
+    loss_type = 'L2',
+    unet_dim = 16,
+    unet_mults = (1, 2 4, 8),
+    unet_channels = 3,
+    training_objective = 'pred_x0'
+)
+
+wandb.init(config=default_hypers, project='bath-thesis', entity='jd202')
 
 model = Unet(
     dim=wandb.config.unet_dim,
