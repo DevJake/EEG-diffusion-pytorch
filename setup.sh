@@ -15,11 +15,12 @@ nano ~/.config/rclone/rclone.conf
 # Add in your rclone config to connect to the repository storing all EEG and Targets data
 mkdir -p datasets/eeg/unsorted datasets/eeg/flower datasets/eeg/penguin datasets/eeg/guitar
 mkdir -p datasets/targets/unsorted datasets/targets/flower datasets/targets/penguin datasets/targets/guitar
-cd ~/diffusion/datasets/eeg/unsorted
-rclone copy gc:/bath-thesis-data/data/outputs/preprocessing . -P
+cd ~/diffusion/datasets/eeg
+#rclone copy gc:/bath-thesis-data/data/outputs/preprocessing . -P
+rclone copy gc:/bath-thesis-data/data/subjects/preprocessed/combined . -P
 find . -name "*.tar.gz" -exec tar -xf {} \; # this will take some time to run...
 find . -name "*.tar.gz" -exec rm -v {} \;
-find ./ -type f -exec mv --backup=numbered {} ./ -v \;
+#find ./ -type f -exec mv --backup=numbered {} ./ -v \;
 cd ~/diffusion/datasets/targets/
 rclone copy gc:/bath-thesis-data/data/classes/32x32.tar . -P
 tar -xf 32x32.tar
