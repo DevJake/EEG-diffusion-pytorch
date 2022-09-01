@@ -32,3 +32,9 @@ accelerate launch model.py
 
 #curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py
 #sudo python3 pytorch-xla-env-setup.py --version 1.12
+
+# Given the enormous size of model save files, and their frequent saving,
+# you can use the following command in a tmux session to have them be backed
+# up the the Google Cloud bucket, or another provider of choice. Source directories are not deleted,
+# so do not worry about the model crashing from not being able to save!
+# while sleep 120; do rclone move ~/diffusion/results/ gc:bath-thesis-data/data/trained_models/ -P; done
