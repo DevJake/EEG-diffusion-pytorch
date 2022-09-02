@@ -89,7 +89,7 @@ trainer = Trainer(
     save_and_sample_every=wandb.config.save_and_sample_rate
 )
 
-trainer.load('~/diffusion/results/loadins', '17')
+trainer.load('./results/loadins', '17')
 
 wandb.watch(model)
 wandb.watch(diffusion)
