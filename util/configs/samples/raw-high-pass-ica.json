@@ -1,6 +1,6 @@
 {
     "META.CONFIG_NAME": "raw-high-pass-ica",
-    "META.CONFIG_COMMENT": "Apply no preprocessing",
+    "META.CONFIG_COMMENT": "Apply high pass and ICA only",
     "PREPROCESSING.DO_HIGH_PASS_FILTER": true,
     "PREPROCESSING.DO_LOW_PASS_FILTER": false,
     "PREPROCESSING.DO_MONTAGE": false,
