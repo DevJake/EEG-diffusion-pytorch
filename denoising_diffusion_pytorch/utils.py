@@ -496,10 +496,11 @@ def linear_beta_schedule(timesteps):
 
 
 def cosine_beta_schedule(timesteps, s=0.008):
-    # TODO add comment on what parameter 's' does/is
     """
     Cosine beta schedule
     as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
+    :param s: The parameter that dictates the 'shift' of the beta values.
+    A lower and higher value will cause beta to begin at a higher and lower value, respectively.
     """
     steps = timesteps + 1
     x = torch.linspace(0, timesteps, steps, dtype=torch.float64)

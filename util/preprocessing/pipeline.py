@@ -134,6 +134,9 @@ def apply_ICA_to_RAW(raw, ica, dimensions_to_keep=124):
     return ica.apply(raw, n_pca_components=dimensions_to_keep)
 
 
+# TODO comment and document all code
+# TODO resolve all TODOs...
+
 # raw.plot_psd(fmin = 0,fmax=50, n_fft=2048, spatial_colors=True)
 # raw.info
 
@@ -143,9 +146,11 @@ def generate_events(raw):
     events, event_ids = mne.events_from_annotations(raw, verbose=False)
     epochs = mne.Epochs(raw=raw, events=events, event_id=event_ids, preload=True, tmin=0, tmax=4, baseline=None,
                         event_repeated='merge')
+    # Gather all epochs within the raw data, assigning a corresponding event ID
 
     events_list = {(a, b, c): [] for a in ['imagined', 'perceived'] for b in ['flower', 'guitar', 'penguin'] for c in
                    ['text', 'pictorial', 'sound']}
+    # Generate a list of possible event combinations. There are 18 in total
 
     for id in event_ids:
         idl = id.lower()
@@ -153,12 +158,14 @@ def generate_events(raw):
         b = 'guitar' if 'guitar' in idl else 'flower' if 'flower' in idl else 'penguin'
         c = 'text' if '_t_' in idl else 'pictorial' if '_image_' in idl else 'sound'
         events_list[(a, b, c)].append(id)
+        # Map the ID of every real event to a corresponding event_id from the events_list variable
 
     for i, event in enumerate(events_list.items()):
         key, value = event
         name = '_'.join(key)
         try:
             mne.epochs.combine_event_ids(epochs, value, {name: 500 + i}, copy=False)
+            # Merge all events with the same ID into a new ID, effectively grouping them for easy access
         except KeyError:
             print('KeyError whilst combining event IDs... skipping this ID')
             continue
@@ -244,18 +251,19 @@ def generate_eeg_dataset(raw_eeg, channels: list = np.arange(128), per_channel=T
     assert type(raw_eeg) in [np.ndarray, mne.io.eeglab.eeglab.RawEEGLAB], \
         f'The given raw_eeg must be of type Numpy Array or RawEEGLAB. type={type(raw_eeg)}'
 
+    # Trim channel count to match the maximum of our input data
     if type(raw_eeg) is mne.io.eeglab.eeglab.RawEEGLAB and len(channels) > len(raw_eeg.ch_names):
         channels = np.arange(len(raw_eeg.ch_names))
     else:
         channels = np.arange(raw_eeg.shape[0])
 
-    window_size = window_width_seconds * 1024  # 1024Hz
+    window_size = window_width_seconds * 1024  # 1024Hz per second sampling frequency
 
     output_size = get_output_dims_by_factors(window_size) if per_channel else get_output_dims_by_factors(
         window_size * len(channels))
     # Size of output image for each EEG sample, optionally per channel
 
-    data = raw_eeg.squeeze()
+    data = raw_eeg.squeeze()  # Remove the outer-most dimension
     if type(raw_eeg) is mne.io.eeglab.eeglab.RawEEGLAB:
         data = raw_eeg.get_data(channels, start=0, stop=None)  # loads all of the data. # (n_channels, n_data_points)
 
@@ -263,15 +271,12 @@ def generate_eeg_dataset(raw_eeg, channels: list = np.arange(128), per_channel=T
 
     split_start, split_end = splits[:, 0], splits[:, 1]
 
-    output = None
+    output = None  # Prefilling our outputs array with zeros
     if per_channel:
         output = np.zeros((channels.shape[0], splits.shape[0], output_size[0],
                            output_size[1]))  # n_channels, n_windows, reshaped_window
     else:
         output = np.zeros((splits.shape[0], output_size[0], output_size[1]))
-
-    if per_channel:
-        temp = np.zeros((channels.shape[0], splits.shape[0]))
 
     for i, s in enumerate(zip(split_start, split_end)):
         a, b = s
@@ -281,6 +286,7 @@ def generate_eeg_dataset(raw_eeg, channels: list = np.arange(128), per_channel=T
                 output[c, i] = data[c, a:b].reshape(-1, output_size[0], output_size[1])
         else:
             output[i] = data[:, a:b].reshape(output_size[0], output_size[1])
+        # Populate the outputs array according to if we're operating per_channel or not
 
     del data
     return output

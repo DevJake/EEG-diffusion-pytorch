@@ -227,6 +227,7 @@ class GaussianDiffusion(nn.Module):
         time_pairs = list(zip(times[:-1], times[1:]))
 
         img = torch.randn(shape, device=device)
+
         # Begin image, xT, sampled as random noise
         # TODO need a way to specify a noise sample from the EEG forward process,
         #  not to randomly generate it
