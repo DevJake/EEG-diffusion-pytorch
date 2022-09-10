@@ -325,14 +325,14 @@ class GaussianDiffusion(nn.Module):
         are compared, their losses computed, and returned.
 
         :param x_start: The given image, x_0, to use for other processes.
-        :param noise: A sample of noise to be applied to the given x_start value.
+        :param generated_noise: A sample of noise to be applied to the given x_start value.
         :param timestep: The timestep to compute losses for. This can be updated linearly, or sampled randomly.
         """
         # b, c, h, w = x_start.shape # Commented out as these values are not used
-        noise = default(noise, lambda: torch.randn_like(eeg_sample))
+        generated_noise = default(noise, lambda: torch.randn_like(eeg_sample))
         # Generates random normal/Gaussian noise with the same dimensions as the given input
 
-        x = self.q_sample(x_start=eeg_sample, t=timestep, noise=noise)
+        x = self.q_sample(x_start=eeg_sample, t=timestep, noise=generated_noise)
         # Warps the image by the noise we just generated
         # in accordance to our beta scheduling choice and current timestep t
 
