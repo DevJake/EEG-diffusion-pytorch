@@ -3,26 +3,33 @@ from functools import partial
 import torch
 from torch import nn
 
-from denoising_diffusion_pytorch.diffusion_models.components import Residual, PreNorm, SinusoidalPositionalEmbedding, \
-    LearnedSinusoidalPositionalEmbedding, ResnetBlock, LinearAttention, Attention
-from denoising_diffusion_pytorch.utils import upsample, downsample, default
+from denoising_diffusion_pytorch.diffusion_models.components import (
+    Attention,
+    LearnedSinusoidalPositionalEmbedding,
+    LinearAttention,
+    PreNorm,
+    Residual,
+    ResnetBlock,
+    SinusoidalPositionalEmbedding,
+)
+from denoising_diffusion_pytorch.utils import default, downsample, upsample
 
 
 class Unet(nn.Module):
     def __init__(
-            self,
-            dim,
-            init_dim=None,
-            out_dim=None,
-            dim_mults=(1, 2, 4, 8),
-            channels=3,
-            self_condition=False,
-            resnet_block_groups=8,
-            learned_variance=False,
-            # TODO learned_variance seems to determine if we follow Improved DDPM and learn the variance alongside
-            #  the mean? Might be worth setting to True if so.
-            learned_sinusoidal_cond=False,
-            learned_sinusoidal_dim=16  # Per Improved DDPM
+        self,
+        dim,
+        init_dim=None,
+        out_dim=None,
+        dim_mults=(1, 2, 4, 8),
+        channels=3,
+        self_condition=False,
+        resnet_block_groups=8,
+        learned_variance=False,
+        # TODO learned_variance seems to determine if we follow Improved DDPM and learn the variance alongside
+        #  the mean? Might be worth setting to True if so.
+        learned_sinusoidal_cond=False,
+        learned_sinusoidal_dim=16,  # Per Improved DDPM
     ):
         """
         :param channels: A multiplier for each channel's layer count.
@@ -39,7 +46,7 @@ class Unet(nn.Module):
         self.init_conv = nn.Conv2d(input_channels, init_dim, 7, padding=3)
 
         dims = [init_dim, *map(lambda m: dim * m, dim_mults)]
-        in_out = list(zip(dims[:-1], dims[1:]))
+        in_out = list(zip(dims[:-1], dims[1:], strict=True))
 
         block_klass = partial(ResnetBlock, groups=resnet_block_groups)
 
@@ -57,10 +64,7 @@ class Unet(nn.Module):
             fourier_dim = dim
 
         self.time_mlp = nn.Sequential(
-            sinu_pos_emb,
-            nn.Linear(fourier_dim, time_dim),
-            nn.GELU(),
-            nn.Linear(time_dim, time_dim)
+            sinu_pos_emb, nn.Linear(fourier_dim, time_dim), nn.GELU(), nn.Linear(time_dim, time_dim)
         )
 
         # layers
@@ -72,12 +76,16 @@ class Unet(nn.Module):
         for ind, (dim_in, dim_out) in enumerate(in_out):
             is_last = ind >= (num_resolutions - 1)
 
-            self.downs.append(nn.ModuleList([
-                block_klass(dim_in, dim_in, time_emb_dim=time_dim),
-                block_klass(dim_in, dim_in, time_emb_dim=time_dim),
-                Residual(PreNorm(dim_in, LinearAttention(dim_in))),
-                downsample(dim_in, dim_out) if not is_last else nn.Conv2d(dim_in, dim_out, 3, padding=1)
-            ]))
+            self.downs.append(
+                nn.ModuleList(
+                    [
+                        block_klass(dim_in, dim_in, time_emb_dim=time_dim),
+                        block_klass(dim_in, dim_in, time_emb_dim=time_dim),
+                        Residual(PreNorm(dim_in, LinearAttention(dim_in))),
+                        downsample(dim_in, dim_out) if not is_last else nn.Conv2d(dim_in, dim_out, 3, padding=1),
+                    ]
+                )
+            )
 
         mid_dim = dims[-1]
         self.mid_block1 = block_klass(mid_dim, mid_dim, time_emb_dim=time_dim)
@@ -87,12 +95,16 @@ class Unet(nn.Module):
         for ind, (dim_in, dim_out) in enumerate(reversed(in_out)):
             is_last = ind == (len(in_out) - 1)
 
-            self.ups.append(nn.ModuleList([
-                block_klass(dim_out + dim_in, dim_out, time_emb_dim=time_dim),
-                block_klass(dim_out + dim_in, dim_out, time_emb_dim=time_dim),
-                Residual(PreNorm(dim_out, LinearAttention(dim_out))),
-                upsample(dim_out, dim_in) if not is_last else nn.Conv2d(dim_out, dim_in, 3, padding=1)
-            ]))
+            self.ups.append(
+                nn.ModuleList(
+                    [
+                        block_klass(dim_out + dim_in, dim_out, time_emb_dim=time_dim),
+                        block_klass(dim_out + dim_in, dim_out, time_emb_dim=time_dim),
+                        Residual(PreNorm(dim_out, LinearAttention(dim_out))),
+                        upsample(dim_out, dim_in) if not is_last else nn.Conv2d(dim_out, dim_in, 3, padding=1),
+                    ]
+                )
+            )
 
         default_out_dim = channels * (1 if not learned_variance else 2)
         self.out_dim = default(out_dim, default_out_dim)
@@ -112,7 +124,7 @@ class Unet(nn.Module):
 
         h = []
 
-        for block1, block2, attn, downsample in self.downs:
+        for block1, block2, attn, downsample_layer in self.downs:
             x = block1(x, t)
             h.append(x)
 
@@ -120,13 +132,13 @@ class Unet(nn.Module):
             x = attn(x)
             h.append(x)
 
-            x = downsample(x)
+            x = downsample_layer(x)
 
         x = self.mid_block1(x, t)
         x = self.mid_attn(x)
         x = self.mid_block2(x, t)
 
-        for block1, block2, attn, upsample in self.ups:
+        for block1, block2, attn, upsample_layer in self.ups:
             x = torch.cat((x, h.pop()), dim=1)
             x = block1(x, t)
 
@@ -134,7 +146,7 @@ class Unet(nn.Module):
             x = block2(x, t)
             x = attn(x)
 
-            x = upsample(x)
+            x = upsample_layer(x)
 
         x = torch.cat((x, r), dim=1)
 
