@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling==1.31.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "denoising-diffusion-pytorch"
+version = "0.27.4"
+description = "Denoising diffusion probabilistic models for EEG-conditioned image generation"
+readme = "README.md"
+requires-python = "==3.14.*"
+license = "MIT"
+authors = [{ name = "DevJake" }]
+keywords = ["artificial intelligence", "diffusion", "EEG", "generative models"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "accelerate==1.14.0",
+    "einops==0.8.2",
+    "ema-pytorch==0.8.3",
+    "pillow==12.3.0",
+    "torch==2.13.0",
+    "torchvision==0.28.0",
+    "tqdm==4.70.0",
+]
+
+[project.optional-dependencies]
+preprocessing = [
+    "matplotlib==3.11.1",
+    "mne==1.12.1",
+    "numpy==2.5.1",
+    "pillow==12.3.0",
+    "tqdm==4.70.0",
+]
+tracking = ["wandb==0.28.1"]
+
+[project.urls]
+Repository = "https://github.com/DevJake/EEG-diffusion-pytorch"
+
+[dependency-groups]
+audit = ["pip-audit==2.10.1"]
+dev = [
+    "build==1.5.0",
+    "pytest==9.1.1",
+    "ruff==0.16.1",
+]
+
+[tool.uv]
+required-version = "==0.12.1"
+
+[tool.hatch.build.targets.wheel]
+packages = ["denoising_diffusion_pytorch", "util"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-config", "--strict-markers"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

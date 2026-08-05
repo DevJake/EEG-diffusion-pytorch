@@ -2,13 +2,14 @@ import glob
 import json
 import os
 import uuid
+
 import util.preprocessing.pipeline as pipe
 
 if __name__ == '__main__':
     samples_dir = './samples'
     variations = None
 
-    with open(f'./variations.json', 'r') as f:
+    with open('./variations.json') as f:
         variations = json.load(f)
 
     for w, _ in variations['window_overlap']:
@@ -31,7 +32,7 @@ if __name__ == '__main__':
         os.makedirs(f'{samples_dir}/generated/config_{i}', exist_ok=True)
 
         conf = None
-        with open(sample, 'r') as f:
+        with open(sample) as f:
             conf = json.load(f)
 
         for wo, use_channels, high_pass, low_pass in combinations:

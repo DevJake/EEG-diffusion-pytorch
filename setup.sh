@@ -1,14 +1,9 @@
 cd ~/
-#python3 -m pip install virtualenv # It is just simpler this way, trust me...
 git clone https://github.com/DevJake/EEG-diffusion-pytorch.git diffusion
 cd diffusion
-#virtualenv venv
-#source venv/bin/activate
-sudo python3 setup.py install
-#pip3 install wandb accelerate einops tqdm ema_pytorch torchvision
-#pip3 install -r requirements.txt
-#python3 -m wandb login
-accelerate config
+uv python install 3.14.4
+uv sync --frozen --extra tracking
+uv run accelerate config
 sudo apt install rclone
 mkdir -p ~/.config/rclone
 nano ~/.config/rclone/rclone.conf
@@ -28,10 +23,7 @@ rm 32x32.tar
 mv 32x32/flower-32x32/* flower/ & mv 32x32/guitar-32x32/* guitar/ & mv 32x32/penguin-32x32/* penguin/
 rm 32x32 -r
 cd ../..
-accelerate launch model.py
-
-#curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py
-#sudo python3 pytorch-xla-env-setup.py --version 1.12
+uv run accelerate launch model.py
 
 # Given the enormous size of model save files, and their frequent saving,
 # you can use the following command in a tmux session to have them be backed
