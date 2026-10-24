@@ -1,7 +1,7 @@
 cd ~/
 git clone https://github.com/DevJake/EEG-diffusion-pytorch.git diffusion
 cd diffusion
-uv python install 3.14.4
+uv python install 3.14.6
 uv sync --frozen --extra tracking
 uv run accelerate config
 sudo apt install rclone
