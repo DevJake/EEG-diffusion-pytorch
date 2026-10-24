@@ -386,7 +386,7 @@ requires-dist = [
     { name = "torchvision", specifier = ">=0.29.1,<1" },
     { name = "tqdm", specifier = ">=4.70.1,<5" },
     { name = "tqdm", marker = "extra == 'preprocessing'", specifier = ">=4.70.1,<5" },
-    { name = "wandb", marker = "extra == 'tracking'", specifier = ">=0.31.0,<1" },
+    { name = "wandb", marker = "extra == 'tracking'", specifier = ">=0.31.0,<0.32" },
 ]
 provides-extras = ["preprocessing", "tracking"]
 
