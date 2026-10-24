@@ -17,13 +17,13 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          version: "0.12.1"
+          version: "0.13.5"
           enable-cache: true
       - name: Set up Python
-        run: uv python install 3.14.4
+        run: uv python install 3.14.6
       - name: Verify locked environment
         run: uv sync --frozen --group dev
       - name: Test
@@ -31,4 +31,4 @@ jobs:
       - name: Build distributions
         run: uv build
       - name: Publish distributions
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3

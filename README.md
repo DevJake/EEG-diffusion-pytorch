@@ -27,7 +27,7 @@ uv add denoising-diffusion-pytorch
 For development, clone the repository and reproduce the locked environment:
 
 ```bash
-uv python install 3.14.4
+uv python install 3.14.6
 uv sync --frozen --group dev
 ```
 
